@@ -1,0 +1,8 @@
+{
+    "name": "bper-operations-e2e",
+    "private": true,
+    "devDependencies": {
+        "@playwright/test": "^1.40.0",
+        "pg": "^8.11.0"
+    }
+}
