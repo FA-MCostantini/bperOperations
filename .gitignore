@@ -1,0 +1,14 @@
+# Ambiente e credenziali
+.env
+
+# Test outputs
+tests/e2e/node_modules/
+tests/e2e/test-results/
+
+# Claude Code
+.claude/
+
+# PhPStorm
+.idea/
+
+.serena/

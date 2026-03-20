@@ -1,0 +1,15 @@
+services:
+  phpunit:
+    build:
+      context: ..
+      dockerfile: tests/Dockerfile
+    volumes:
+      - ..:/app
+    networks:
+      - fa-universe
+    working_dir: /app
+
+networks:
+  fa-universe:
+    name: fa-universe
+    external: true
