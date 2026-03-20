@@ -6,6 +6,7 @@ use FirstAdvisory\FAWill\model\Operations\{AjaxResponseHelper, OperationFactory}
 
 try {
     $request = AjaxResponseHelper::getRequest();
+    /** @var \FirstAdvisory\FAWill\model\Operations\ResetDocumentState $operation */
     $operation = OperationFactory::create('ResetDocumentState');
     $result = $operation->updateStatus($request);
     AjaxResponseHelper::success($result, $operation);  // log automatico

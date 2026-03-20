@@ -1,0 +1,11 @@
+parameters:
+    level: 8
+    paths:
+        - src/
+    excludePaths:
+        - src/controller/
+    scanDirectories:
+        - lib/
+        - src/
+    bootstrapFiles:
+        - lib/env_settings.php

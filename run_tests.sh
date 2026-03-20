@@ -11,6 +11,15 @@ docker compose -f tests/docker-compose.yml run --rm phpunit php -r "
     echo 'Migration completed successfully.' . PHP_EOL;
 "
 
+echo "=== Running PHPStan (level 8) ==="
+docker compose -f tests/docker-compose.yml run --rm phpunit vendor/bin/phpstan analyse --no-progress
+PHPSTAN_EXIT=$?
+
+if [ $PHPSTAN_EXIT -ne 0 ]; then
+    echo "PHPStan failed with exit code $PHPSTAN_EXIT"
+    exit $PHPSTAN_EXIT
+fi
+
 echo "=== Running PHPUnit tests ==="
 docker compose -f tests/docker-compose.yml run --rm phpunit vendor/bin/phpunit -c tests/phpunit.xml
 PHPUNIT_EXIT=$?

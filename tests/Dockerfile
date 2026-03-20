@@ -7,7 +7,5 @@ RUN apt-get update && apt-get install -y libpq-dev unzip git \
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
-COPY composer.json ./
-RUN composer install --no-interaction --prefer-dist
-
 COPY . .
+RUN composer install --no-interaction --prefer-dist

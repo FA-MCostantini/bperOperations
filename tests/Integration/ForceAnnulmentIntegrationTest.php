@@ -16,7 +16,7 @@ class ForceAnnulmentIntegrationTest extends BperTestCase
     private const TEST_BPER_POLICY_NUMBER    = 'TEST_FA_POLICY';
     private const TEST_COMPANY_OPERATION_ID  = 'TEST_FA_OP_001';
     private const TEST_OPERATION_TYPE_DESC   = 'TEST_FA_OP_DESC';
-    private const TEST_OPERATION_TYPE_CODE   = 'TEST_FA_CODE';
+    private const TEST_OPERATION_TYPE_CODE   = 'TSTFA';
 
     /** @var int|null Inserted t_param_operation_type.id */
     private ?int $operationTypeId = null;
@@ -30,6 +30,11 @@ class ForceAnnulmentIntegrationTest extends BperTestCase
     protected function setUp(): void
     {
         $pdo = $this->getConnection();
+
+        // Sync sequences to avoid duplicate key conflicts with existing data
+        foreach (['t_param_operation_type', 't_policy_operation', 't_policy_operation_draft', 't_int_policy_operation_docs'] as $t) {
+            $pdo->exec("SELECT setval(pg_get_serial_sequence('ntt_bper.{$t}', 'id'), COALESCE((SELECT MAX(id) FROM ntt_bper.{$t}), 0) + 1, false)");
+        }
 
         // 1. Insert a test operation type
         $stmt = $pdo->prepare(
@@ -53,7 +58,7 @@ class ForceAnnulmentIntegrationTest extends BperTestCase
              VALUES
                  (:type_id, 'PENDING', :bper_policy, :company_op_id,
                   'TEST_CO', 'TEST_CPN', 100.00, NOW(),
-                  'TEST_ABI', 'TEST_AGC', 'TEST_CAB', 'TEST_IBAN',
+                  'TSABI', 'TSAGC', 'TSCAB', 'TEST_IBAN',
                   'TEST_NDG', 'TEST_FC', 'TEST_FCLGRP', 'TEST_CR', 'TEST_PC')
              RETURNING id"
         );
@@ -181,7 +186,7 @@ class ForceAnnulmentIntegrationTest extends BperTestCase
              VALUES
                  (:type_id, 'CANCELLED', :bper_policy, 'TEST_FA_CANCELLED_OP',
                   'TEST_CO', 'TEST_CPN', 0.00, NOW(),
-                  'TEST_ABI', 'TEST_AGC', 'TEST_CAB', 'TEST_IBAN',
+                  'TSABI', 'TSAGC', 'TSCAB', 'TEST_IBAN',
                   'TEST_NDG', 'TEST_FC', 'TEST_FCLGRP', 'TEST_CR', 'TEST_PC')
              RETURNING id"
         );

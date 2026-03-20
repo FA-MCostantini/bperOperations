@@ -4,6 +4,9 @@ namespace FirstAdvisory\FAWill\model\Operations;
 class ForceAnnulmentRepository {
     use \TraitTryQuery;
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getOperationList(): array {
         // Q-FA-01: large SELECT with JOIN, WHERE status != 'CANCELLED'
         $stmt = $this->tryQuery(
@@ -30,15 +33,24 @@ class ForceAnnulmentRepository {
                  ON po.t_param_operation_type_id = pot.id
               WHERE po.operation_status != 'CANCELLED'"
         );
+        if ($stmt === null) {
+            return [];
+        }
         return $this->getQueryRecords($stmt) ?: [];
     }
 
+    /**
+     * @return array<string, mixed>|false
+     */
     public function getOperationData(int $id): array|false {
         // Q-FA-02
         $stmt = $this->tryQuery(
             "SELECT bper_policy_number, company_operation_id FROM ntt_bper.t_policy_operation WHERE id = :id_to_delete",
             [':id_to_delete' => $id]
         );
+        if ($stmt === null) {
+            return false;
+        }
         return $this->getQueryRecord($stmt);
     }
 

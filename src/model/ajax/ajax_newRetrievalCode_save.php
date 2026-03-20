@@ -6,6 +6,7 @@ use FirstAdvisory\FAWill\model\Operations\{AjaxResponseHelper, OperationFactory}
 
 try {
     $request = AjaxResponseHelper::getRequest();
+    /** @var \FirstAdvisory\FAWill\model\Operations\NewRetrievalCode $operation */
     $operation = OperationFactory::create('NewRetrievalCode');
     $result = $operation->insert($request);
     AjaxResponseHelper::success($result, $operation);  // log automatico

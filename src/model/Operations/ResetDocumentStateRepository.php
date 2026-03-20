@@ -4,6 +4,9 @@ namespace FirstAdvisory\FAWill\model\Operations;
 class ResetDocumentStateRepository {
     use \TraitTryQuery;
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getDraftList(): array {
         // Q-RDS-01: Complex query with 4 JOINs + GROUP BY + COUNT FILTER
         $stmt = $this->tryQuery(
@@ -44,6 +47,9 @@ class ResetDocumentStateRepository {
                      , po.iban, po.customer_ndg, po.fiscal_code
                      , po.fiscal_code_lgrp, po.code_rapporto, po.product_code"
         );
+        if ($stmt === null) {
+            return [];
+        }
         return $this->getQueryRecords($stmt) ?: [];
     }
 

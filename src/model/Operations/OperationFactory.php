@@ -33,6 +33,9 @@ class OperationFactory
     {
         $operationsDir = __DIR__;
         $files = glob($operationsDir . '/*.php');
+        if ($files === false) {
+            return [];
+        }
         $result = [];
 
         foreach ($files as $file) {
@@ -43,7 +46,8 @@ class OperationFactory
                 continue;
             }
 
-            if (!in_array(OperationInterface::class, class_implements($fqcn), true)) {
+            $implements = class_implements($fqcn);
+            if ($implements === false || !in_array(OperationInterface::class, $implements, true)) {
                 continue;
             }
 

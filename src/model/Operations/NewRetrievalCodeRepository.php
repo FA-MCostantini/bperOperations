@@ -4,6 +4,9 @@ namespace FirstAdvisory\FAWill\model\Operations;
 class NewRetrievalCodeRepository {
     use \TraitTryQuery;
 
+    /**
+     * @return list<string>
+     */
     public function searchPolicyNumber(string $searchTerm): array {
         // Q-NRC-01: SELECT bper_policy_number FROM ntt_bper.v_policy WHERE bper_policy_number LIKE :search_term LIMIT 10
         // Append '%' to searchTerm
@@ -11,16 +14,25 @@ class NewRetrievalCodeRepository {
             "SELECT bper_policy_number FROM ntt_bper.v_policy WHERE bper_policy_number LIKE :search_term LIMIT 10",
             [':search_term' => $searchTerm . '%']
         );
+        if ($stmt === null) {
+            return [];
+        }
         $records = $this->getQueryRecords($stmt);
         return array_column($records ?: [], 'bper_policy_number');
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getExistingCodes(string $bperContractNumber): array {
         // Q-NRC-02
         $stmt = $this->tryQuery(
             "SELECT insert_date, code, operation_type_code FROM ntt_bper.t_ath_policy_auth_code WHERE bper_contract_number = :bper_contract_number ORDER BY insert_date DESC, operation_type_code",
             [':bper_contract_number' => $bperContractNumber]
         );
+        if ($stmt === null) {
+            return [];
+        }
         return $this->getQueryRecords($stmt) ?: [];
     }
 
@@ -30,6 +42,9 @@ class NewRetrievalCodeRepository {
             "SELECT MAX(CAST(RIGHT(code, 1) AS INTEGER)) AS max_n FROM ntt_bper.t_ath_policy_auth_code WHERE code LIKE :code_prefix",
             [':code_prefix' => $codePrefix . '%']
         );
+        if ($stmt === null) {
+            return null;
+        }
         $record = $this->getQueryRecord($stmt);
         return $record && $record['max_n'] !== null ? (int)$record['max_n'] : null;
     }

@@ -15,10 +15,16 @@ class ResetDocumentState extends AbstractOperation {
     public function getColor(): string { return 'warning'; }
     public function getJsPath(): string { return './assets-fa/js/Operations/resetDocumentState.js'; }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getDrafts(AjaxRequest $request): array {
         return $this->repository->getDraftList();
     }
 
+    /**
+     * @return array{updated: true}
+     */
     public function updateStatus(AjaxRequest $request): array {
         $id = (int) $request->get('id', 0);
         if ($id <= 0) {

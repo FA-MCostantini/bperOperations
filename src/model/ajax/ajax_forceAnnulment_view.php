@@ -6,6 +6,7 @@ use FirstAdvisory\FAWill\model\Operations\{AjaxResponseHelper, OperationFactory}
 
 try {
     $request = AjaxResponseHelper::getRequest();
+    /** @var \FirstAdvisory\FAWill\model\Operations\ForceAnnulment $operation */
     $operation = OperationFactory::create('ForceAnnulment');
 
     switch ($request->action) {

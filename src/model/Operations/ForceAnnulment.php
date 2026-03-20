@@ -15,15 +15,22 @@ class ForceAnnulment extends AbstractOperation {
     public function getColor(): string { return 'danger'; }
     public function getJsPath(): string { return './assets-fa/js/Operations/forceAnnulment.js'; }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getOperations(AjaxRequest $request): array {
         return $this->repository->getOperationList();
     }
 
+    /**
+     * @return array{deleted: true}
+     */
     public function delete(AjaxRequest $request): array {
-        $id = (int) $request->get('id', 0);
-        if ($id <= 0) {
+        $rawId = (string) $request->get('id', '0');
+        if (!ctype_digit($rawId) || $rawId === '0') {
             throw new \InvalidArgumentException('ID operazione non valido');
         }
+        $id = (int) $rawId;
         $data = $this->repository->getOperationData($id);
         if ($data === false) {
             throw new \RuntimeException('Operazione non trovata');

@@ -6,6 +6,9 @@ class OperationAuditLogger
 {
     use \TraitTryQuery;
 
+    /**
+     * @param array<string, mixed> $payload
+     */
     public function log(string $operationName, array $payload, int $userId): void
     {
         $this->tryQuery(
@@ -14,7 +17,7 @@ class OperationAuditLogger
              VALUES (:operation_name, :payload::jsonb, :user_id, NOW())",
             [
                 ':operation_name' => $operationName,
-                ':payload'        => json_encode($payload),
+                ':payload'        => json_encode($payload) ?: '{}',
                 ':user_id'        => $userId,
             ]
         );

@@ -15,7 +15,7 @@ class ResetDocumentStateIntegrationTest extends BperTestCase
 {
     private const TEST_BPER_POLICY_NUMBER   = 'TEST_RDS_POLICY';
     private const TEST_OPERATION_TYPE_DESC  = 'TEST_RDS_OP_DESC';
-    private const TEST_OPERATION_TYPE_CODE  = 'TEST_RDS_CODE';
+    private const TEST_OPERATION_TYPE_CODE  = 'TSTRD';
 
     /** @var int|null Inserted t_param_operation_type.id */
     private ?int $operationTypeId = null;
@@ -29,6 +29,11 @@ class ResetDocumentStateIntegrationTest extends BperTestCase
     protected function setUp(): void
     {
         $pdo = $this->getConnection();
+
+        // Sync sequences to avoid duplicate key conflicts with existing data
+        foreach (['t_param_operation_type', 't_policy_operation', 't_policy_operation_draft', 't_ath_policy_operation_docs'] as $t) {
+            $pdo->exec("SELECT setval(pg_get_serial_sequence('ntt_bper.{$t}', 'id'), COALESCE((SELECT MAX(id) FROM ntt_bper.{$t}), 0) + 1, false)");
+        }
 
         // 1. Insert a test operation type
         $stmt = $pdo->prepare(
@@ -52,7 +57,7 @@ class ResetDocumentStateIntegrationTest extends BperTestCase
              VALUES
                  (:type_id, 'PENDING', :bper_policy, 'TEST_RDS_OP_001',
                   'TEST_CO', 'TEST_CPN', 100.00, NOW(),
-                  'TEST_ABI', 'TEST_AGC', 'TEST_CAB', 'TEST_IBAN',
+                  'TSABI', 'TSAGC', 'TSCAB', 'TEST_IBAN',
                   'TEST_NDG', 'TEST_FC', 'TEST_FCLGRP', 'TEST_CR', 'TEST_PC')
              RETURNING id"
         );

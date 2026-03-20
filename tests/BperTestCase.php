@@ -42,7 +42,8 @@ class BperTestCase extends \PHPUnit\Framework\TestCase
     protected function cleanupAuditLog(): void
     {
         $this->getConnection()->exec(
-            "DELETE FROM public.operation_audit_log WHERE operation_name LIKE 'TEST_%'"
+            "DELETE FROM public.operation_audit_log WHERE operation_name LIKE 'TEST_%'
+             OR operation_name IN ('forceAnnulment', 'newRetrievalCode', 'resetDocumentState')"
         );
     }
 }

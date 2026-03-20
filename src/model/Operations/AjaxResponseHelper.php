@@ -57,7 +57,8 @@ class AjaxResponseHelper
             'message' => $message,
         ];
 
-        if (defined('ENV_IS_DEV') && ENV_IS_DEV && $exception !== null) {
+        /** @phpstan-ignore booleanAnd.leftAlwaysTrue */
+        if (ENV_IS_DEV && $exception !== null) {
             $response['exception'] = $exception->getMessage() . "\n" . $exception->getTraceAsString();
         }
 

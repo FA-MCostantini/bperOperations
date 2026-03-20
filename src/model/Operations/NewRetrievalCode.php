@@ -15,28 +15,40 @@ class NewRetrievalCode extends AbstractOperation {
     public function getColor(): string { return 'primary'; }
     public function getJsPath(): string { return './assets-fa/js/Operations/newRetrievalCode.js'; }
 
+    /**
+     * @return list<string>
+     */
     public function searchPolicy(AjaxRequest $request): array {
-        $q = $request->get('q', '');
+        $q = (string) $request->get('q', '');
         if (strlen($q) < 2) {
             return [];
         }
         return $this->repository->searchPolicyNumber($q);
     }
 
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getExistingCodes(AjaxRequest $request): array {
-        return $this->repository->getExistingCodes($request->get('bper_contract_number', ''));
+        return $this->repository->getExistingCodes((string) $request->get('bper_contract_number', ''));
     }
 
+    /**
+     * @return array{code: string, next_n: int}
+     */
     public function calculatePreview(AjaxRequest $request): array {
         return $this->generateCode(
-            $request->get('bper_contract_number', ''),
-            $request->get('type', 'T')
+            (string) $request->get('bper_contract_number', ''),
+            (string) $request->get('type', 'T')
         );
     }
 
+    /**
+     * @return array{code: string, inserted: true}
+     */
     public function insert(AjaxRequest $request): array {
-        $contractNumber = $request->get('bper_contract_number', '');
-        $type = $request->get('type', 'T');
+        $contractNumber = (string) $request->get('bper_contract_number', '');
+        $type = (string) $request->get('type', 'T');
         $result = $this->generateCode($contractNumber, $type);
         $operationTypeCode = $this->getOperationTypeCode($type);
         $this->repository->insertCode($result['code'], $contractNumber, $operationTypeCode);
@@ -51,6 +63,9 @@ class NewRetrievalCode extends AbstractOperation {
         };
     }
 
+    /**
+     * @return array{code: string, next_n: int}
+     */
     private function generateCode(string $contractNumber, string $type): array {
         $prefix = 'R' . $type . $contractNumber;
         $maxN = $this->repository->calculateNextCode($prefix);
