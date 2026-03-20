@@ -31,6 +31,16 @@ if (!defined('AUTOLOADER_LOADED')) {
     // Livello 3: factory
     require_once __DIR__ . '/../src/model/Operations/OperationFactory.php';
 
-    // Livello 4: controller
+    // Livello 4: repository
+    require_once __DIR__ . '/../src/model/Operations/NewRetrievalCodeRepository.php';
+    require_once __DIR__ . '/../src/model/Operations/ForceAnnulmentRepository.php';
+    require_once __DIR__ . '/../src/model/Operations/ResetDocumentStateRepository.php';
+
+    // Livello 5: operation
+    require_once __DIR__ . '/../src/model/Operations/NewRetrievalCode.php';
+    require_once __DIR__ . '/../src/model/Operations/ForceAnnulment.php';
+    require_once __DIR__ . '/../src/model/Operations/ResetDocumentState.php';
+
+    // Livello 6: controller
     require_once __DIR__ . '/../src/controller/Operations/ctl_operations.php';
 }
