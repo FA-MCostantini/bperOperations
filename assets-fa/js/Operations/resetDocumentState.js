@@ -232,11 +232,11 @@ const ResetDocumentState = {
             })
                 .then(res => res.json())
                 .then(result => {
-                    if (result.updated) {
+                    if (result.success) {
                         this.fetchData();
                     } else {
                         if (typeof showErrorToast === 'function') {
-                            showErrorToast('Errore durante il reset dello stato');
+                            showErrorToast(result.message || 'Errore durante il reset dello stato');
                         }
                     }
                 })
@@ -277,5 +277,3 @@ const ResetDocumentState = {
         document.removeEventListener('modal-reopen', this.onModalReopen);
     }
 };
-
-Vue.createApp(ResetDocumentState).mount('#container-resetDocumentState');
