@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const TEST_PAGE = '/tests/e2e/test-page.php';
+const TEST_PAGE = '/test-page.php';
 
 /**
  * E-MAIN — MainApp E2E tests
@@ -36,10 +36,12 @@ test.describe('E-MAIN — MainApp', () => {
     });
 
     /**
-     * E-MAIN-02: Card click opens modal
-     * QUANDO l'utente clicca su una Card abilitata, la modale deve aprirsi con il form
+     * E-MAIN-02: Card click opens modal AND Vue component mounts with content
+     * QUANDO l'utente clicca su una Card abilitata, la modale deve aprirsi
+     * e il componente Vue figlio deve effettivamente renderizzare contenuto
+     * (form, tabella, ecc.) dentro il container dinamico.
      */
-    test('E-MAIN-02: clicking an enabled card opens the operation modal', async ({ page }) => {
+    test('E-MAIN-02: clicking an enabled card opens modal with rendered Vue component', async ({ page }) => {
         // Find the first enabled (non-disabled) card
         const enabledCard = page.locator('.operation-card:not(.disabled)').first();
         await expect(enabledCard).toBeVisible();
@@ -49,9 +51,18 @@ test.describe('E-MAIN — MainApp', () => {
         const modal = page.locator('#operationModal');
         await expect(modal).toBeVisible({ timeout: 8000 });
 
-        // Modal title should be non-empty
-        const title = modal.locator('.modal-title');
+        // Modal title should be non-empty (first .modal-title is the operation header)
+        const title = modal.locator('.modal-header > .modal-title').first();
         await expect(title).not.toBeEmpty();
+
+        // CRITICAL: The Vue child component must actually render content inside
+        // the dynamic container. If window[appName] is undefined (e.g. because
+        // the JS file uses 'const' instead of 'window.X'), the container stays empty.
+        // Wait for at least one interactive element (input, select, table, button)
+        // to appear inside the modal body — this proves the Vue component mounted.
+        const modalBody = modal.locator('.modal-body');
+        const hasContent = modalBody.locator('input, select, table, .table-responsive, .alert');
+        await expect(hasContent.first()).toBeVisible({ timeout: 8000 });
     });
 
     /**
@@ -75,8 +86,8 @@ test.describe('E-MAIN — MainApp', () => {
             await textInput.fill('TEST_PERSIST_VALUE');
         }
 
-        // Close modal
-        await modal.locator('.btn-close').click();
+        // Close modal (use .first() to avoid strict mode violation when inner confirm modals also have .btn-close)
+        await modal.locator('.btn-close').first().click();
         await expect(modal).not.toBeVisible({ timeout: 5000 });
 
         // Reopen the same card
@@ -143,6 +154,49 @@ test.describe('E-MAIN — MainApp', () => {
     });
 
     /**
+     * E-MAIN-05b: Each operation JS registers its component on window
+     * Verifica che ogni script di operazione crei una proprietà su window
+     * (es. window.NewRetrievalCode, window.ForceAnnulment, ecc.)
+     * Questo test avrebbe catturato il bug 'const X = {}' che non crea window[X].
+     */
+    test('E-MAIN-05b: operation scripts register Vue components on window object', async ({ page }) => {
+        const apiResponse = await page.evaluate(async () => {
+            const res = await fetch('./model/ajax/ajax_operations_view.php?action=list');
+            return res.json();
+        });
+
+        expect(apiResponse.success).toBe(true);
+
+        for (const op of apiResponse.data as { jsPath: string; enabled: boolean }[]) {
+            if (!op.enabled) continue;
+
+            // Derive expected window property name from jsPath
+            // e.g. "./assets-fa/js/Operations/newRetrievalCode.js" -> "NewRetrievalCode"
+            const parts = op.jsPath.split('/');
+            const filename = parts[parts.length - 1].replace('.js', '');
+            const appName = filename.charAt(0).toUpperCase() + filename.slice(1);
+
+            // Load the script and verify window[appName] is defined
+            const isDefined = await page.evaluate(async ({ jsPath, appName }) => {
+                return new Promise<boolean>((resolve) => {
+                    // Check if already loaded
+                    if ((window as any)[appName]) {
+                        resolve(true);
+                        return;
+                    }
+                    const script = document.createElement('script');
+                    script.src = jsPath;
+                    script.onload = () => resolve(!!(window as any)[appName]);
+                    script.onerror = () => resolve(false);
+                    document.body.appendChild(script);
+                });
+            }, { jsPath: op.jsPath, appName });
+
+            expect(isDefined, `window.${appName} must be defined after loading ${op.jsPath}`).toBe(true);
+        }
+    });
+
+    /**
      * E-MAIN-06: Invisible operation generates no card
      * QUANDO isVisible()=false, nessuna Card è presente per quell'operazione
      * (AC-ACC-01)
@@ -153,7 +207,7 @@ test.describe('E-MAIN — MainApp', () => {
         // with a name matching an invisible stub (integration concern) and that
         // the rendered cards count matches the API payload count.
         const apiResponse = await page.evaluate(async () => {
-            const res = await fetch('./src/model/ajax/ajax_operations_view.php?action=list');
+            const res = await fetch('./model/ajax/ajax_operations_view.php?action=list');
             return res.json();
         });
 

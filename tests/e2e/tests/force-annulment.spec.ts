@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const TEST_PAGE = '/tests/e2e/test-page.php';
+const TEST_PAGE = '/test-page.php';
 
 /**
  * E-FA — forceAnnulment E2E tests
@@ -215,16 +215,16 @@ test.describe('E-FA — forceAnnulment', () => {
         await expect(trashIcon).toBeVisible();
         await trashIcon.click();
 
-        // Confirm modal should appear
-        const deleteModal = page.locator('#deleteConfirmModal');
-        await expect(deleteModal).toBeVisible({ timeout: 5000 });
+        // Confirm dialog should appear (Vue v-if driven)
+        const deleteDialog = page.locator('#deleteConfirmModal');
+        await expect(deleteDialog).toBeVisible({ timeout: 5000 });
 
         // Confirm deletion
-        const confirmBtn = deleteModal.locator('.btn-danger');
+        const confirmBtn = deleteDialog.locator('.btn-danger');
         await confirmBtn.click();
 
-        // Delete modal should close
-        await expect(deleteModal).not.toBeVisible({ timeout: 5000 });
+        // Confirm dialog should disappear (v-if removes from DOM)
+        await expect(deleteDialog).toHaveCount(0, { timeout: 5000 });
 
         // Table should reload with one fewer row
         await page.waitForTimeout(500);
@@ -259,14 +259,15 @@ test.describe('E-FA — forceAnnulment', () => {
         const trashIcon = modal.locator('.bi-trash').first();
         await trashIcon.click();
 
-        const deleteModal = page.locator('#deleteConfirmModal');
-        await expect(deleteModal).toBeVisible({ timeout: 5000 });
+        const deleteDialog = page.locator('#deleteConfirmModal');
+        await expect(deleteDialog).toBeVisible({ timeout: 5000 });
 
-        // Click Annulla (cancel button — data-bs-dismiss="modal")
-        const cancelBtn = deleteModal.locator('.btn-secondary');
+        // Click Annulla (cancel button)
+        const cancelBtn = deleteDialog.locator('.btn-secondary');
         await cancelBtn.click();
 
-        await expect(deleteModal).not.toBeVisible({ timeout: 5000 });
+        // Confirm dialog should disappear (v-if removes from DOM)
+        await expect(deleteDialog).toHaveCount(0, { timeout: 5000 });
 
         // The row must still be present
         const bodyRows = modal.locator('.table tbody tr');

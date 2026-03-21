@@ -382,7 +382,7 @@ trait TraitTryQuery
     private function debugPrintException(Throwable $t, string $stmt): void
     {
         if (ENV_IS_DEV) {
-            echo '<pre>'.$t->getMessage()."\n\n".$t->getTraceAsString()."\n\n".$stmt.'</pre>';
+            error_log('[TraitTryQuery] ' . $t->getMessage() . "\n" . $t->getTraceAsString() . "\nQuery: " . $stmt);
         }
     }
 }

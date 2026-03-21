@@ -1,15 +1,17 @@
-const ResetDocumentState = {
+window.ResetDocumentState = {
     template: `
         <div>
-            <!-- Toolbar: filter + page size -->
+            <!-- Toolbar: filter + hide-completed + page size -->
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                <input
-                    v-model="filterText"
-                    type="text"
-                    class="form-control form-control-sm w-auto"
-                    placeholder="Filtra..."
-                    @input="currentPage = 1"
-                />
+                <div class="d-flex align-items-center gap-3">
+                    <input
+                        v-model="filterText"
+                        type="text"
+                        class="form-control form-control-sm w-auto"
+                        placeholder="Filtra..."
+                        @input="currentPage = 1"
+                    />
+                </div>
                 <div class="d-flex align-items-center gap-2">
                     <label class="mb-0 small">Righe per pagina:</label>
                     <select v-model.number="pageSize" class="form-select form-select-sm w-auto" @change="currentPage = 1">
@@ -23,7 +25,7 @@ const ResetDocumentState = {
 
             <!-- Table -->
             <div class="table-responsive">
-                <table class="table table-bordered table-hover table-sm align-middle">
+                <table class="table table-bordered table-hover table-striped table-sm align-middle">
                     <thead class="table-dark">
                         <tr>
                             <th style="width:3rem;"></th>
@@ -86,38 +88,38 @@ const ResetDocumentState = {
                 <nav>
                     <ul class="pagination pagination-sm mb-0">
                         <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                            <a class="page-link" href="#" @click.prevent="currentPage = 1">&laquo;</a>
+                            <a class="page-link" href="#" @click.prevent="currentPage > 1 && currentPage--">Precedente</a>
                         </li>
-                        <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                            <a class="page-link" href="#" @click.prevent="currentPage > 1 && currentPage--">&lsaquo;</a>
+                        <li
+                            v-for="page in visiblePages"
+                            :key="page"
+                            class="page-item"
+                            :class="{ active: page === currentPage }"
+                        >
+                            <a class="page-link" href="#" @click.prevent="currentPage = page">{{ page }}</a>
                         </li>
                         <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                            <a class="page-link" href="#" @click.prevent="currentPage < totalPages && currentPage++">&rsaquo;</a>
-                        </li>
-                        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                            <a class="page-link" href="#" @click.prevent="currentPage = totalPages">&raquo;</a>
+                            <a class="page-link" href="#" @click.prevent="currentPage < totalPages && currentPage++">Successivo</a>
                         </li>
                     </ul>
                 </nav>
             </div>
 
-            <!-- Confirm modal -->
-            <div class="modal fade" id="modal-resetDocumentState" tabindex="-1" data-bs-backdrop="static">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Conferma Reset Stato</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <p>Sei sicuro di voler resettare lo stato del documento selezionato?</p>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                            <button type="button" class="btn btn-warning" @click="confirmChange">
-                                <i class="bi bi-clock-history me-1"></i> Conferma Reset
-                            </button>
-                        </div>
+            <!-- Conferma reset (Vue-driven, no nested Bootstrap modal) -->
+            <div v-if="showConfirmDialog" id="modal-resetDocumentState" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="z-index: 1060; background: rgba(0,0,0,0.5);">
+                <div class="card shadow" style="min-width: 350px; max-width: 500px;">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Conferma Reset Stato</h5>
+                        <button type="button" class="btn-close" @click="closeConfirmModal"></button>
+                    </div>
+                    <div class="card-body">
+                        <p>Sei sicuro di voler resettare lo stato del documento selezionato?</p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="button" class="btn btn-secondary me-2" @click="closeConfirmModal">Annulla</button>
+                        <button type="button" class="btn btn-warning" @click="confirmChange">
+                            <i class="bi bi-clock-history me-1"></i> Conferma Reset
+                        </button>
                     </div>
                 </div>
             </div>
@@ -134,7 +136,7 @@ const ResetDocumentState = {
             pageSize: 20,
             currentPage: 1,
             changeTargetId: null,
-            _confirmModal: null
+            showConfirmDialog: false
         };
     },
 
@@ -173,29 +175,46 @@ const ResetDocumentState = {
 
         totalPages() {
             return Math.max(1, Math.ceil(this.filteredRows.length / this.pageSize));
+        },
+
+        visiblePages() {
+            const total = this.totalPages;
+            const current = this.currentPage;
+            const windowSize = 10;
+
+            let start = Math.max(1, current - Math.floor(windowSize / 2));
+            let end = start + windowSize - 1;
+
+            if (end > total) {
+                end = total;
+                start = Math.max(1, end - windowSize + 1);
+            }
+
+            const pages = [];
+            for (let i = start; i <= end; i++) {
+                pages.push(i);
+            }
+            return pages;
         }
     },
 
     methods: {
         fetchData() {
-            fetch('./src/model/ajax/ajax_resetDocumentState_view.php?action=tabella')
-                .then(res => res.json())
-                .then(data => {
+            fetch('./model/ajax/ajax_resetDocumentState_view.php?action=tabella')
+                .then(res => handleAjaxResponse(res, 'Errore nel caricamento dei dati'))
+                .then(json => {
+                    const data = json.data;
                     if (!Array.isArray(data) || data.length === 0) {
                         this.allRows = [];
                         this.columns = [];
                         return;
                     }
                     this.allRows = data;
-                    const excluded = ['id'];
+                    const excluded = ['id', 'IBAN', 'LGRP', 'Codice Rapporto'];
                     this.columns = Object.keys(data[0]).filter(k => !excluded.includes(k));
                     this.currentPage = 1;
                 })
-                .catch(() => {
-                    if (typeof showErrorToast === 'function') {
-                        showErrorToast('Errore nel caricamento dei dati');
-                    }
-                });
+                .catch(err => handleNetworkError(err, 'caricamento reset stato documento'));
         },
 
         isPending(row) {
@@ -207,16 +226,12 @@ const ResetDocumentState = {
             if (!row || !this.isPending(row)) return;
 
             this.changeTargetId = id;
+            this.showConfirmDialog = true;
+        },
 
-            if (!this._confirmModal) {
-                const el = document.getElementById('modal-resetDocumentState');
-                if (el) {
-                    this._confirmModal = new bootstrap.Modal(el);
-                }
-            }
-            if (this._confirmModal) {
-                this._confirmModal.show();
-            }
+        closeConfirmModal() {
+            this.showConfirmDialog = false;
+            this.changeTargetId = null;
         },
 
         confirmChange() {
@@ -225,31 +240,18 @@ const ResetDocumentState = {
             const formData = new URLSearchParams();
             formData.append('id', this.changeTargetId);
 
-            fetch('./src/model/ajax/ajax_resetDocumentState_save.php', {
+            fetch('./model/ajax/ajax_resetDocumentState_save.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData.toString()
             })
-                .then(res => res.json())
-                .then(result => {
-                    if (result.success) {
-                        this.fetchData();
-                    } else {
-                        if (typeof showErrorToast === 'function') {
-                            showErrorToast(result.message || 'Errore durante il reset dello stato');
-                        }
-                    }
+                .then(res => handleAjaxResponse(res, 'Errore durante il reset dello stato'))
+                .then(() => {
+                    this.fetchData();
                 })
-                .catch(() => {
-                    if (typeof showErrorToast === 'function') {
-                        showErrorToast('Errore di connessione al server');
-                    }
-                })
+                .catch(err => handleNetworkError(err, 'reset stato documento'))
                 .finally(() => {
-                    if (this._confirmModal) {
-                        this._confirmModal.hide();
-                    }
-                    this.changeTargetId = null;
+                    this.closeConfirmModal();
                 });
         },
 

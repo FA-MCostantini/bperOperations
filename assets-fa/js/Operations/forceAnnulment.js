@@ -1,9 +1,10 @@
-const ForceAnnulment = {
+// Note: modal width is handled by the parent app.js which opens this component inside a modal-xl dialog.
+window.ForceAnnulment = {
     template: `
         <div>
-            <!-- Filtro e selezione dimensione pagina -->
+            <!-- Filtro, nascondi completati e selezione dimensione pagina -->
             <div class="row mb-3 g-2 align-items-center">
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <input
                         type="text"
                         class="form-control"
@@ -23,9 +24,11 @@ const ForceAnnulment = {
 
             <!-- Tabella dinamica -->
             <div class="table-responsive">
-                <table class="table table-bordered table-hover table-sm">
+                <table class="table table-bordered table-hover table-sm table-striped align-middle">
                     <thead class="table-dark">
                         <tr>
+                            <!-- Colonna icona azione -->
+                            <th style="width:3rem;"></th>
                             <th
                                 v-for="col in columns"
                                 :key="col"
@@ -36,69 +39,70 @@ const ForceAnnulment = {
                                 <span v-if="sortColumn === col">
                                     <i :class="sortAsc ? 'bi bi-sort-up' : 'bi bi-sort-down'"></i>
                                 </span>
+                                <span v-else>
+                                    <i class="bi bi-arrow-down-up text-secondary opacity-50"></i>
+                                </span>
                             </th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-if="paginatedRows.length === 0">
-                            <td :colspan="columns.length" class="text-center text-muted">Nessun dato disponibile</td>
+                            <td :colspan="columns.length + 1" class="text-center text-muted">Nessun dato disponibile</td>
                         </tr>
                         <tr v-for="(row, rowIndex) in paginatedRows" :key="rowIndex">
-                            <td
-                                v-for="(col, colIndex) in columns"
-                                :key="col"
-                            >
-                                <span v-if="colIndex === 0">
-                                    <i
-                                        class="bi bi-trash text-danger me-2"
-                                        style="cursor: pointer;"
-                                        @click="deleteOperation(row.id)"
-                                        title="Elimina"
-                                    ></i>
-                                    {{ row[col] }}
-                                </span>
-                                <span v-else>{{ row[col] }}</span>
+                            <!-- Colonna trash separata -->
+                            <td class="text-center">
+                                <i
+                                    class="bi bi-trash text-danger"
+                                    style="cursor: pointer;"
+                                    @click="deleteOperation(row.id)"
+                                    title="Elimina"
+                                ></i>
                             </td>
+                            <td v-for="col in columns" :key="col">{{ row[col] }}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Paginazione -->
-            <nav v-if="totalPages > 1">
-                <ul class="pagination pagination-sm justify-content-center flex-wrap">
-                    <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                        <button class="page-link" @click="currentPage--" :disabled="currentPage === 1">Precedente</button>
-                    </li>
-                    <li
-                        v-for="page in totalPages"
-                        :key="page"
-                        class="page-item"
-                        :class="{ active: currentPage === page }"
-                    >
-                        <button class="page-link" @click="currentPage = page">{{ page }}</button>
-                    </li>
-                    <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                        <button class="page-link" @click="currentPage++" :disabled="currentPage === totalPages">Successivo</button>
-                    </li>
-                </ul>
-            </nav>
+            <!-- Info righe e paginazione -->
+            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 mt-2">
+                <small class="text-muted">
+                    Pagina {{ currentPage }} di {{ totalPages }} &mdash; {{ filteredRows.length }} righe
+                </small>
+                <nav v-if="totalPages > 1">
+                    <ul class="pagination pagination-sm justify-content-center mb-0">
+                        <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                            <button class="page-link" @click="currentPage--" :disabled="currentPage === 1">Precedente</button>
+                        </li>
+                        <li
+                            v-for="page in visiblePages"
+                            :key="page"
+                            class="page-item"
+                            :class="{ active: currentPage === page }"
+                        >
+                            <button class="page-link" @click="currentPage = page">{{ page }}</button>
+                        </li>
+                        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                            <button class="page-link" @click="currentPage++" :disabled="currentPage === totalPages">Successivo</button>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
 
-            <!-- Modale di conferma eliminazione -->
-            <div class="modal fade" id="deleteConfirmModal" tabindex="-1" data-bs-backdrop="static">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Conferma eliminazione</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            Sei sicuro di voler eliminare questa operazione? L'azione non è reversibile.
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
-                            <button type="button" class="btn btn-danger" @click="confirmDelete">Elimina</button>
-                        </div>
+            <!-- Conferma eliminazione (Vue-driven, no nested Bootstrap modal) -->
+            <div v-if="showDeleteConfirm" id="deleteConfirmModal" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="z-index: 1060; background: rgba(0,0,0,0.5);">
+                <div class="card shadow" style="min-width: 350px; max-width: 500px;">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Conferma eliminazione</h5>
+                        <button type="button" class="btn-close" @click="closeDeleteModal"></button>
+                    </div>
+                    <div class="card-body">
+                        Sei sicuro di voler eliminare questa operazione? L'azione non è reversibile.
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="button" class="btn btn-secondary me-2" @click="closeDeleteModal">Annulla</button>
+                        <button type="button" class="btn btn-danger" @click="confirmDelete">Elimina</button>
                     </div>
                 </div>
             </div>
@@ -115,7 +119,7 @@ const ForceAnnulment = {
             pageSize: 20,
             currentPage: 1,
             deleteTargetId: null,
-            deleteModal: null
+            showDeleteConfirm: false
         };
     },
 
@@ -153,7 +157,27 @@ const ForceAnnulment = {
         },
 
         totalPages() {
-            return Math.ceil(this.filteredRows.length / this.pageSize);
+            return Math.max(1, Math.ceil(this.filteredRows.length / this.pageSize));
+        },
+
+        visiblePages() {
+            const total = this.totalPages;
+            const current = this.currentPage;
+            const windowSize = 10;
+
+            if (total <= windowSize) {
+                return Array.from({ length: total }, (_, i) => i + 1);
+            }
+
+            let start = Math.max(1, current - Math.floor(windowSize / 2));
+            let end = start + windowSize - 1;
+
+            if (end > total) {
+                end = total;
+                start = Math.max(1, end - windowSize + 1);
+            }
+
+            return Array.from({ length: end - start + 1 }, (_, i) => start + i);
         }
     },
 
@@ -168,20 +192,17 @@ const ForceAnnulment = {
 
     methods: {
         fetchData() {
-            fetch('./src/model/ajax/ajax_forceAnnulment_view.php?action=tabella')
-                .then(res => res.json())
+            const excludedColumns = ['IBAN', 'LGRP', 'Codice Rapporto'];
+            fetch('./model/ajax/ajax_forceAnnulment_view.php?action=tabella')
+                .then(res => handleAjaxResponse(res, 'Errore nel caricamento dei dati'))
                 .then(json => {
-                    if (json.success) {
-                        this.allRows = json.data;
-                        this.columns = json.data.length > 0
-                            ? Object.keys(json.data[0]).filter(k => k !== 'id')
-                            : [];
-                        this.currentPage = 1;
-                    } else {
-                        showErrorToast(json.message || 'Errore nel caricamento dei dati');
-                    }
+                    this.allRows = json.data;
+                    this.columns = json.data.length > 0
+                        ? Object.keys(json.data[0]).filter(k => k !== 'id' && !excludedColumns.includes(k))
+                        : [];
+                    this.currentPage = 1;
                 })
-                .catch(() => showErrorToast('Errore di connessione al server'));
+                .catch(err => handleNetworkError(err, 'caricamento annullamenti forzati'));
         },
 
         toggleSort(col) {
@@ -195,11 +216,12 @@ const ForceAnnulment = {
 
         deleteOperation(id) {
             this.deleteTargetId = id;
-            const modalEl = document.getElementById('deleteConfirmModal');
-            if (!this.deleteModal) {
-                this.deleteModal = new bootstrap.Modal(modalEl);
-            }
-            this.deleteModal.show();
+            this.showDeleteConfirm = true;
+        },
+
+        closeDeleteModal() {
+            this.showDeleteConfirm = false;
+            this.deleteTargetId = null;
         },
 
         confirmDelete() {
@@ -208,24 +230,17 @@ const ForceAnnulment = {
             const body = new URLSearchParams();
             body.append('id', this.deleteTargetId);
 
-            fetch('./src/model/ajax/ajax_forceAnnulment_save.php', {
+            fetch('./model/ajax/ajax_forceAnnulment_save.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: body.toString()
             })
-                .then(res => res.json())
-                .then(json => {
-                    if (json.success) {
-                        this.deleteTargetId = null;
-                        if (this.deleteModal) {
-                            this.deleteModal.hide();
-                        }
-                        this.fetchData();
-                    } else {
-                        showErrorToast(json.message || 'Errore durante l\'eliminazione');
-                    }
+                .then(res => handleAjaxResponse(res, 'Errore durante l\'eliminazione'))
+                .then(() => {
+                    this.closeDeleteModal();
+                    this.fetchData();
                 })
-                .catch(() => showErrorToast('Errore di connessione al server'));
+                .catch(err => handleNetworkError(err, 'eliminazione annullamento forzato'));
         },
 
         onModalReopen() {

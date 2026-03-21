@@ -4,9 +4,9 @@ async function globalSetup() {
     const pool = new Pool({
         host: process.env.DB_HOST || 'localhost',
         port: parseInt(process.env.DB_PORT || '5432'),
-        database: process.env.DB_NAME || 'bperoperations',
+        database: process.env.DB_NAME || 'fa-dev-bper',
         user: process.env.DB_USER || 'postgres',
-        password: process.env.DB_PASSWORD || 'postgres',
+        password: process.env.DB_PASSWORD || 'local!Passw0rd',
     });
 
     // Insert test fixtures with TEST_E2E_ prefix

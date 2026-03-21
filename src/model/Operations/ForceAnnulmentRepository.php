@@ -1,11 +1,15 @@
 <?php declare(strict_types=1);
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use Throwable;
+use TraitTryQuery;
+
 class ForceAnnulmentRepository {
-    use \TraitTryQuery;
+    use TraitTryQuery;
 
     /**
      * @return array<int, array<string, mixed>>
+     * @throws Throwable
      */
     public function getOperationList(): array {
         // Q-FA-01: large SELECT with JOIN, WHERE status != 'CANCELLED'
@@ -31,7 +35,7 @@ class ForceAnnulmentRepository {
                FROM ntt_bper.t_policy_operation po
               INNER JOIN ntt_bper.t_param_operation_type pot
                  ON po.t_param_operation_type_id = pot.id
-              WHERE po.operation_status != 'CANCELLED'"
+              WHERE po.operation_status NOT IN ('CANCELLED', 'COMPLETED')"
         );
         if ($stmt === null) {
             return [];
@@ -40,7 +44,9 @@ class ForceAnnulmentRepository {
     }
 
     /**
+     * @param int $id
      * @return array<string, mixed>|false
+     * @throws Throwable
      */
     public function getOperationData(int $id): array|false {
         // Q-FA-02
@@ -54,6 +60,12 @@ class ForceAnnulmentRepository {
         return $this->getQueryRecord($stmt);
     }
 
+    /**
+     * @param string $bperPolicyNumber
+     * @param string $companyOperationId
+     * @return void
+     * @throws Throwable
+     */
     public function deleteOperation(string $bperPolicyNumber, string $companyOperationId): void {
         // Q-FA-03, Q-FA-04, Q-FA-05 in atomic transaction via stack
         $params = [':bper_policy_number' => $bperPolicyNumber, ':company_operation_id' => $companyOperationId];

@@ -1,28 +1,38 @@
 <?php declare(strict_types=1);
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use Throwable;
+use TraitTryQuery;
+
 class NewRetrievalCodeRepository {
-    use \TraitTryQuery;
+    use TraitTryQuery;
 
     /**
-     * @return list<string>
+     * @param string $searchTerm
+     * @return array<int, array<string, mixed>>
+     * @throws Throwable
      */
     public function searchPolicyNumber(string $searchTerm): array {
-        // Q-NRC-01: SELECT bper_policy_number FROM ntt_bper.v_policy WHERE bper_policy_number LIKE :search_term LIMIT 10
+        // Q-NRC-01: SELECT bper_policy_number, company_policy_number FROM ntt_bper.v_policy WHERE bper_policy_number LIKE :search_term OR company_policy_number LIKE :search_term2 LIMIT 10
         // Append '%' to searchTerm
         $stmt = $this->tryQuery(
-            "SELECT bper_policy_number FROM ntt_bper.v_policy WHERE bper_policy_number LIKE :search_term LIMIT 10",
-            [':search_term' => $searchTerm . '%']
+            "SELECT bper_policy_number, company_policy_number
+             FROM ntt_bper.v_policy
+             WHERE bper_policy_number LIKE :search_term
+                OR company_policy_number LIKE :search_term2
+             LIMIT 10",
+            [':search_term' => $searchTerm . '%', ':search_term2' => $searchTerm . '%']
         );
         if ($stmt === null) {
             return [];
         }
-        $records = $this->getQueryRecords($stmt);
-        return array_column($records ?: [], 'bper_policy_number');
+        return $this->getQueryRecords($stmt) ?: [];
     }
 
     /**
+     * @param string $bperContractNumber
      * @return array<int, array<string, mixed>>
+     * @throws Throwable
      */
     public function getExistingCodes(string $bperContractNumber): array {
         // Q-NRC-02
@@ -36,6 +46,11 @@ class NewRetrievalCodeRepository {
         return $this->getQueryRecords($stmt) ?: [];
     }
 
+    /**
+     * @param string $codePrefix
+     * @return int|null
+     * @throws Throwable
+     */
     public function calculateNextCode(string $codePrefix): ?int {
         // Q-NRC-03
         $stmt = $this->tryQuery(
@@ -49,6 +64,13 @@ class NewRetrievalCodeRepository {
         return $record && $record['max_n'] !== null ? (int)$record['max_n'] : null;
     }
 
+    /**
+     * @param string $code
+     * @param string $bperContractNumber
+     * @param string $operationTypeCode
+     * @return void
+     * @throws Throwable
+     */
     public function insertCode(string $code, string $bperContractNumber, string $operationTypeCode): void {
         // Q-NRC-04
         $this->tryQuery(

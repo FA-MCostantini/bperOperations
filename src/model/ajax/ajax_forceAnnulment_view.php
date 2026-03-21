@@ -11,7 +11,7 @@ try {
 
     switch ($request->action) {
         case 'tabella':
-            AjaxResponseHelper::success($operation->getOperations($request));
+            AjaxResponseHelper::success($operation->getOperations());
             break;
         default:
             AjaxResponseHelper::error('Azione non valida');

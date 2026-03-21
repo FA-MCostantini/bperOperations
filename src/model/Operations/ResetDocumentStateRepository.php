@@ -1,11 +1,15 @@
 <?php declare(strict_types=1);
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use Throwable;
+use TraitTryQuery;
+
 class ResetDocumentStateRepository {
-    use \TraitTryQuery;
+    use TraitTryQuery;
 
     /**
      * @return array<int, array<string, mixed>>
+     * @throws Throwable
      */
     public function getDraftList(): array {
         // Q-RDS-01: Complex query with 4 JOINs + GROUP BY + COUNT FILTER
@@ -38,6 +42,7 @@ class ResetDocumentStateRepository {
               INNER JOIN ntt_bper.t_param_operation_type pot
                  ON po.t_param_operation_type_id = pot.id
               WHERE tapod.download_status IN ('PENDING', 'ERROR')
+                AND po.operation_status NOT IN ('CANCELLED', 'COMPLETED')
               GROUP BY tpod.id
                      , pot.operation_desc, pot.operation_code
                      , po.operation_status, po.company_code
@@ -53,6 +58,11 @@ class ResetDocumentStateRepository {
         return $this->getQueryRecords($stmt) ?: [];
     }
 
+    /**
+     * @param int $draftId
+     * @return void
+     * @throws Throwable
+     */
     public function updateDocumentStatus(int $draftId): void {
         // Q-RDS-02
         $this->tryQuery(

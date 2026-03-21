@@ -130,8 +130,12 @@ class NewRetrievalCodeIntegrationTest extends BperTestCase
         $this->assertIsArray($results);
         $this->assertLessThanOrEqual(10, count($results));
 
-        foreach ($results as $policyNumber) {
-            $this->assertStringStartsWith('TEST_054', $policyNumber);
+        foreach ($results as $row) {
+            $this->assertIsArray($row);
+            $this->assertArrayHasKey('bper_policy_number', $row);
+            $matchesBper = str_starts_with($row['bper_policy_number'], 'TEST_054');
+            $matchesCompany = isset($row['company_policy_number']) && str_starts_with($row['company_policy_number'], 'TEST_054');
+            $this->assertTrue($matchesBper || $matchesCompany, 'Result must match prefix in bper_policy_number or company_policy_number');
         }
     }
 
