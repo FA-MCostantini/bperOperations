@@ -18,7 +18,7 @@ const OperationsApp = {
 
             <!-- Modale operazione -->
             <div class="modal fade" id="operationModal" tabindex="-1" data-bs-backdrop="static">
-                <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-dialog modal-xl modal-dialog-scrollable" style="max-width: 95vw;">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title">{{ currentOperation ? currentOperation.title : '' }}</h5>
@@ -56,16 +56,12 @@ const OperationsApp = {
 
     methods: {
         fetchOperations() {
-            fetch('./src/model/ajax/ajax_operations_view.php?action=list')
-                .then(res => res.json())
+            fetch('./model/ajax/ajax_operations_view.php?action=list')
+                .then(res => handleAjaxResponse(res, 'Errore nel caricamento delle operazioni'))
                 .then(json => {
-                    if (json.success) {
-                        this.operations = json.data;
-                    } else {
-                        showErrorToast(json.message || 'Errore nel caricamento delle operazioni');
-                    }
+                    this.operations = json.data;
                 })
-                .catch(() => showErrorToast('Errore di connessione al server'));
+                .catch(err => handleNetworkError(err, 'caricamento operazioni'));
         },
 
         getContainerId(op) {
@@ -123,14 +119,28 @@ const OperationsApp = {
     }
 };
 
-function showErrorToast(message) {
+/**
+ * Mostra un toast di errore con chiusura manuale (X) o automatica dopo 15 secondi.
+ * @param {string} message  - Messaggio principale
+ * @param {string} [detail] - Dettaglio tecnico (eccezione, stack trace)
+ */
+function showErrorToast(message, detail) {
     const container = document.getElementById('toast-container');
     if (!container) return;
 
     const toastId = 'toast-' + Date.now();
-    const toastHtml = '<div id="' + toastId + '" class="toast align-items-center text-bg-danger border-0" role="alert" data-bs-autohide="false">' +
+    const safeMessage = escapeHtml(message);
+    const detailHtml = detail
+        ? '<hr class="my-1 border-light opacity-50">' +
+          '<pre class="mb-0 small" style="white-space:pre-wrap;word-break:break-word;max-height:200px;overflow-y:auto;">' +
+          escapeHtml(detail) + '</pre>'
+        : '';
+
+    const toastHtml =
+        '<div id="' + toastId + '" class="toast align-items-center text-bg-danger border-0" role="alert" ' +
+             'data-bs-autohide="true" data-bs-delay="15000">' +
         '<div class="d-flex">' +
-        '<div class="toast-body">' + message + '</div>' +
+        '<div class="toast-body">' + safeMessage + detailHtml + '</div>' +
         '<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>' +
         '</div></div>';
     container.insertAdjacentHTML('beforeend', toastHtml);
@@ -138,4 +148,55 @@ function showErrorToast(message) {
     const toastEl = document.getElementById(toastId);
     const toast = new bootstrap.Toast(toastEl);
     toast.show();
+
+    toastEl.addEventListener('hidden.bs.toast', function () {
+        toastEl.remove();
+    });
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(str));
+    return div.innerHTML;
+}
+
+/**
+ * Gestisce l'errore di una fetch AJAX mostrando un toast dettagliato.
+ * Usare come: .then(res => handleAjaxResponse(res, 'Errore nel caricamento'))
+ */
+function handleAjaxResponse(response, fallbackMessage) {
+    if (!response.ok) {
+        return response.json().catch(function () { return {}; }).then(function (json) {
+            var msg = (json && json.message) ? json.message : fallbackMessage + ' (HTTP ' + response.status + ')';
+            var detail = (json && json.exception) ? json.exception : null;
+            showErrorToast(msg, detail);
+            var err = new Error(msg);
+            err._toastShown = true;
+            return Promise.reject(err);
+        });
+    }
+    return response.json().then(function (json) {
+        if (!json.success && json.success !== undefined) {
+            var detail = json.exception || null;
+            showErrorToast(json.message || fallbackMessage, detail);
+            var err = new Error(json.message || fallbackMessage);
+            err._toastShown = true;
+            return Promise.reject(err);
+        }
+        return json;
+    });
+}
+
+/**
+ * Handler per errori di rete (catch di fetch).
+ * Ignora errori gia' gestiti da handleAjaxResponse (doppio toast).
+ * @param {Error} err
+ * @param {string} context - Contesto dell'operazione fallita
+ */
+function handleNetworkError(err, context) {
+    if (err && err._toastShown) return;
+    var detail = err.message || '';
+    if (err.name) detail = err.name + ': ' + detail;
+    if (err.stack) detail += '\n' + err.stack;
+    showErrorToast('Errore di connessione al server — ' + context, detail);
 }

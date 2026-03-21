@@ -1,6 +1,10 @@
 <?php declare(strict_types=1);
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
+
 class NewRetrievalCode extends AbstractOperation {
     private NewRetrievalCodeRepository $repository;
 
@@ -16,7 +20,8 @@ class NewRetrievalCode extends AbstractOperation {
     public function getJsPath(): string { return './assets-fa/js/Operations/newRetrievalCode.js'; }
 
     /**
-     * @return list<string>
+     * @return array<int, array<string, mixed>>
+     * @throws Throwable
      */
     public function searchPolicy(AjaxRequest $request): array {
         $q = (string) $request->get('q', '');
@@ -28,13 +33,17 @@ class NewRetrievalCode extends AbstractOperation {
 
     /**
      * @return array<int, array<string, mixed>>
+     * @throws Throwable
+     * @throws Throwable
      */
     public function getExistingCodes(AjaxRequest $request): array {
         return $this->repository->getExistingCodes((string) $request->get('bper_contract_number', ''));
     }
 
     /**
+     * @param AjaxRequest $request
      * @return array{code: string, next_n: int}
+     * @throws Throwable
      */
     public function calculatePreview(AjaxRequest $request): array {
         return $this->generateCode(
@@ -45,6 +54,8 @@ class NewRetrievalCode extends AbstractOperation {
 
     /**
      * @return array{code: string, inserted: true}
+     * @throws Throwable
+     * @throws Throwable
      */
     public function insert(AjaxRequest $request): array {
         $contractNumber = (string) $request->get('bper_contract_number', '');
@@ -59,12 +70,14 @@ class NewRetrievalCode extends AbstractOperation {
         return match ($type) {
             'P' => '_RISPA',
             'T' => '_RISTO',
-            default => throw new \InvalidArgumentException("Tipo non valido: {$type}"),
+            default => throw new InvalidArgumentException("Tipo non valido: $type"),
         };
     }
 
     /**
      * @return array{code: string, next_n: int}
+     * @throws Throwable
+     * @throws Throwable
      */
     private function generateCode(string $contractNumber, string $type): array {
         $prefix = 'R' . $type . $contractNumber;
@@ -72,7 +85,7 @@ class NewRetrievalCode extends AbstractOperation {
         $nextN = $maxN === null ? 1 : $maxN + 1;
 
         if ($nextN > 9) {
-            throw new \RuntimeException('Limite massimo codici raggiunto per questo contratto e tipo');
+            throw new RuntimeException('Limite massimo codici raggiunto per questo contratto e tipo');
         }
 
         return ['code' => $prefix . $nextN, 'next_n' => $nextN];

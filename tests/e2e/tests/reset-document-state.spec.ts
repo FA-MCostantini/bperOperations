@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const TEST_PAGE = '/tests/e2e/test-page.php';
+const TEST_PAGE = '/test-page.php';
 
 /**
  * E-RDS — resetDocumentState E2E tests
@@ -47,7 +47,7 @@ test.describe('E-RDS — resetDocumentState', () => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
-                body: JSON.stringify(MOCK_RDS_DATA),
+                body: JSON.stringify({ success: true, data: MOCK_RDS_DATA }),
             });
         });
 
@@ -84,7 +84,7 @@ test.describe('E-RDS — resetDocumentState', () => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
-                body: JSON.stringify(MOCK_RDS_DATA),
+                body: JSON.stringify({ success: true, data: MOCK_RDS_DATA }),
             });
         });
 
@@ -117,7 +117,7 @@ test.describe('E-RDS — resetDocumentState', () => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
-                body: JSON.stringify(MOCK_RDS_DATA),
+                body: JSON.stringify({ success: true, data: MOCK_RDS_DATA }),
             });
         });
 
@@ -134,11 +134,11 @@ test.describe('E-RDS — resetDocumentState', () => {
         const xIcon = errorRow.locator('.bi-x-circle-fill');
         await expect(xIcon).toBeVisible();
 
-        // Clicking the X icon must NOT open any modal
+        // Clicking the X icon must NOT open any confirm dialog
         await xIcon.click();
-        const confirmModal = page.locator('#modal-resetDocumentState');
+        const confirmDialog = page.locator('#modal-resetDocumentState');
         await page.waitForTimeout(500);
-        await expect(confirmModal).not.toBeVisible();
+        await expect(confirmDialog).toHaveCount(0);
     });
 
     /**
@@ -151,7 +151,7 @@ test.describe('E-RDS — resetDocumentState', () => {
         // First call returns PENDING + ERROR; second call (after save) returns all ERROR
         await page.route('**/ajax_resetDocumentState_view.php**', async (route) => {
             callCount++;
-            const data = callCount === 1
+            const rows = callCount === 1
                 ? MOCK_RDS_DATA
                 : [
                     { id: 1, 'Draft ID': 'DRAFT_PENDING_1', 'Doc. PENDING': 0, 'Doc. ERROR': 2 },
@@ -160,7 +160,7 @@ test.describe('E-RDS — resetDocumentState', () => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
-                body: JSON.stringify(data),
+                body: JSON.stringify({ success: true, data: rows }),
             });
         });
 
@@ -186,8 +186,8 @@ test.describe('E-RDS — resetDocumentState', () => {
         const confirmBtn = confirmModal.locator('.btn-warning');
         await confirmBtn.click();
 
-        // Modal should close and table should reload
-        await expect(confirmModal).not.toBeVisible({ timeout: 5000 });
+        // Confirm dialog should disappear (v-if removes from DOM) and table should reload
+        await expect(confirmModal).toHaveCount(0, { timeout: 5000 });
         await page.waitForTimeout(500);
 
         // The formerly PENDING row should now be grey (bg-light)

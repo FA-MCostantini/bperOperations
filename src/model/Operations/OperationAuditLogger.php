@@ -2,12 +2,18 @@
 
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use Throwable;
+use TraitTryQuery;
+
 class OperationAuditLogger
 {
-    use \TraitTryQuery;
+    use TraitTryQuery;
 
     /**
+     * @param string $operationName
      * @param array<string, mixed> $payload
+     * @param int $userId
+     * @throws Throwable
      */
     public function log(string $operationName, array $payload, int $userId): void
     {

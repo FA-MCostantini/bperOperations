@@ -1,6 +1,9 @@
 <?php declare(strict_types=1);
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use InvalidArgumentException;
+use Throwable;
+
 class ResetDocumentState extends AbstractOperation {
     private ResetDocumentStateRepository $repository;
 
@@ -17,18 +20,21 @@ class ResetDocumentState extends AbstractOperation {
 
     /**
      * @return array<int, array<string, mixed>>
+     * @throws Throwable
      */
-    public function getDrafts(AjaxRequest $request): array {
+    public function getDrafts(): array {
         return $this->repository->getDraftList();
     }
 
     /**
+     * @param AjaxRequest $request
      * @return array{updated: true}
+     * @throws Throwable
      */
     public function updateStatus(AjaxRequest $request): array {
         $id = (int) $request->get('id', 0);
         if ($id <= 0) {
-            throw new \InvalidArgumentException('ID draft non valido');
+            throw new InvalidArgumentException('ID draft non valido');
         }
         $this->repository->updateDocumentStatus($id);
         return ['updated' => true];

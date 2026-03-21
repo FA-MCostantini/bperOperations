@@ -10,7 +10,7 @@ use Throwable;
  * Responsabilita:
  * - Cattura e incapsula i dati della richiesta (AjaxRequest DTO)
  * - Serializza e invia le risposte JSON
- * - Scrive automaticamente l'audit log su success() quando un'operazione è fornita
+ * - Scrive automaticamente l' audit log su success() quando un'operazione è fornita
  */
 class AjaxResponseHelper
 {
@@ -30,9 +30,11 @@ class AjaxResponseHelper
     }
 
     /**
-     * @param mixed $data
+     * @param mixed|null $data
+     * @param AbstractOperation|null $operation
+     * @throws Throwable
      */
-    public static function success($data = null, ?AbstractOperation $operation = null): void
+    public static function success(mixed $data = null, ?AbstractOperation $operation = null): void
     {
         if ($operation !== null && self::$currentRequest !== null) {
             $logger = new OperationAuditLogger();

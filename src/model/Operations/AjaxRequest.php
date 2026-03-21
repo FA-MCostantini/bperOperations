@@ -2,12 +2,12 @@
 
 namespace FirstAdvisory\FAWill\model\Operations;
 
-class AjaxRequest
+readonly class AjaxRequest
 {
-    public readonly string $method;
-    public readonly string $action;
+    public string $method;
+    public string $action;
     /** @var array<string, mixed> */
-    public readonly array $params;
+    public array $params;
 
     /**
      * @param array<string, mixed> $params

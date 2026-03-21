@@ -2,9 +2,11 @@
 
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use TraitTryQuery;
+
 abstract class AbstractOperation implements OperationInterface
 {
-    use \TraitTryQuery;
+    use TraitTryQuery;
 
     public function isVisible(): bool
     {

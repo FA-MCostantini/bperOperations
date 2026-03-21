@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const TEST_PAGE = '/tests/e2e/test-page.php';
+const TEST_PAGE = '/test-page.php';
 
 /**
  * E-NRC — newRetrievalCode E2E tests
@@ -36,7 +36,27 @@ test.describe('E-NRC — newRetrievalCode', () => {
      * E-NRC-01: Autocomplete shows suggestions after 2s debounce
      * AC-NRC-01: digitare "054" — dopo 2 secondi appare la lista suggerimenti
      */
-    test('E-NRC-01: autocomplete shows suggestions after 2-second debounce', async ({ page }) => {
+    test('E-NRC-01: autocomplete fires search after 2-second debounce', async ({ page }) => {
+        // Mock the search endpoint to guarantee results
+        await page.route('**/ajax_newRetrievalCode_view.php**', async (route) => {
+            const url = route.request().url();
+            if (url.includes('action=search')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        success: true,
+                        data: [
+                            { bper_policy_number: 'POL_051', company_policy_number: 'CPN_051' },
+                            { bper_policy_number: 'POL_052', company_policy_number: 'CPN_052' },
+                        ],
+                    }),
+                });
+            } else {
+                await route.continue();
+            }
+        });
+
         const modal = await openNrcModal(page);
 
         const contractInput = modal.locator('input[placeholder="Cerca contratto..."]');
@@ -47,7 +67,7 @@ test.describe('E-NRC — newRetrievalCode', () => {
         // The debounce is 2 seconds — wait for it plus a small buffer
         await page.waitForTimeout(2500);
 
-        // Suggestions list should appear with at least one item
+        // Suggestions list should appear with the mocked items
         const suggestions = modal.locator('ul.list-group li.list-group-item');
         const count = await suggestions.count();
         expect(count).toBeGreaterThan(0);
@@ -66,7 +86,7 @@ test.describe('E-NRC — newRetrievalCode', () => {
         await expect(contractInput).toHaveValue('');
 
         // Insert button contains the bi-plus-circle icon
-        const insertBtn = modal.locator('button:has(.bi-plus-circle)');
+        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
         await expect(insertBtn).toBeDisabled();
     });
 
@@ -86,7 +106,7 @@ test.describe('E-NRC — newRetrievalCode', () => {
         await contractInput.fill('TEST_E2E_054');
 
         // Insert button should now be enabled
-        const insertBtn = modal.locator('button:has(.bi-plus-circle)');
+        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
         await expect(insertBtn).toBeEnabled();
     });
 
@@ -107,12 +127,13 @@ test.describe('E-NRC — newRetrievalCode', () => {
 
         if (suggestionCount > 0) {
             await suggestions.first().click();
-            // Wait for preview to appear
-            await page.waitForSelector('.alert-info', { timeout: 5000 });
-            const preview = page.locator('.alert-info');
+            // Wait for preview to update (inline preview next to contract field)
+            await page.waitForTimeout(1500);
+            const preview = modal.locator('.form-control-plaintext.fw-bold');
             await expect(preview).toBeVisible();
             const previewText = await preview.textContent();
-            expect(previewText?.trim().length).toBeGreaterThan(0);
+            // Preview should show formatted code like "R T 123456 1" (not just em-dash)
+            expect(previewText?.trim().length).toBeGreaterThan(1);
         } else {
             // No matching data in this environment — type directly and check
             await contractInput.fill('TEST_E2E_054');
@@ -136,7 +157,7 @@ test.describe('E-NRC — newRetrievalCode', () => {
         const contractInput = modal.locator('input[placeholder="Cerca contratto..."]');
         await contractInput.fill('TEST_E2E_054');
 
-        const insertBtn = modal.locator('button:has(.bi-plus-circle)');
+        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
         await expect(insertBtn).toBeEnabled();
         await insertBtn.click();
 
@@ -161,7 +182,7 @@ test.describe('E-NRC — newRetrievalCode', () => {
         await contractInput.fill('TEST_E2E_054');
 
         // Open confirm modal
-        const insertBtn = modal.locator('button:has(.bi-plus-circle)');
+        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
         await expect(insertBtn).toBeEnabled();
         await insertBtn.click();
 
@@ -225,7 +246,7 @@ test.describe('E-NRC — newRetrievalCode', () => {
         expect(warningText).toContain('Limite');
 
         // Insert button must be disabled
-        const insertBtn = modal.locator('button:has(.bi-plus-circle)');
+        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
         await expect(insertBtn).toBeDisabled();
     });
 

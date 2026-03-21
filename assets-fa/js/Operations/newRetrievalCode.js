@@ -1,4 +1,4 @@
-const NewRetrievalCode = {
+window.NewRetrievalCode = {
     template: `
         <div>
             <!-- Input row: type dropdown + contract autocomplete + insert button -->
@@ -28,21 +28,21 @@ const NewRetrievalCode = {
                     >
                         <li
                             v-for="s in suggestions"
-                            :key="s"
+                            :key="s.bper_policy_number"
                             class="list-group-item list-group-item-action"
                             style="cursor: pointer;"
                             @mousedown.prevent="selectSuggestion(s)"
-                        >{{ s }}</li>
+                        >{{ s.bper_policy_number }}<span v-if="s.company_policy_number && s.company_policy_number !== s.bper_policy_number" class="text-muted ms-1">({{ s.company_policy_number }})</span></li>
                     </ul>
                 </div>
                 <div class="col-auto">
+                    <label class="form-label mb-1 d-block">Anteprima</label>
+                    <div class="form-control-plaintext fw-bold" style="min-width: 120px;">{{ formattedPreview || '\u2014' }}</div>
+                </div>
+                <div class="col-auto">
                     <label class="form-label mb-1 d-block">&nbsp;</label>
-                    <button
-                        class="btn btn-primary"
-                        :disabled="!canInsert"
-                        @click="insertCode"
-                    >
-                        <i class="bi bi-plus-circle"></i> Inserisci
+                    <button class="btn btn-primary btn-lg d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: 12px;" :disabled="!canInsert" @click="insertCode" title="Inserisci">
+                        <i class="bi bi-plus-lg fs-4"></i>
                     </button>
                 </div>
             </div>
@@ -53,15 +53,9 @@ const NewRetrievalCode = {
                 <span>{{ limitMessage }}</span>
             </div>
 
-            <!-- Preview section -->
-            <div v-if="previewCode && !limitReached" class="alert alert-info mb-3">
-                <strong>Anteprima codice:</strong> {{ previewCode }}
-                <span v-if="nextN !== null" class="ms-2 text-muted">(progressivo: {{ nextN }})</span>
-            </div>
-
             <!-- Existing codes table -->
-            <div v-if="existingCodes.length > 0">
-                <h6 class="mb-2">Codici esistenti</h6>
+            <div v-if="contractNumber && !showSuggestions">
+                <h6 class="mb-2">{{ existingCodes.length > 0 ? 'Codici esistenti' : 'Ancora nessun codice per questo contratto.' }}</h6>
                 <table class="table table-sm table-bordered table-striped">
                     <thead class="table-dark">
                         <tr>
@@ -78,9 +72,6 @@ const NewRetrievalCode = {
                         </tr>
                     </tbody>
                 </table>
-            </div>
-            <div v-else-if="contractNumber && !showSuggestions" class="text-muted small">
-                Nessun codice esistente per questo contratto.
             </div>
 
             <!-- Confirmation modal -->
@@ -131,6 +122,17 @@ const NewRetrievalCode = {
     computed: {
         canInsert() {
             return this.contractNumber.trim() !== '' && this.type !== '' && !this.limitReached;
+        },
+        formattedPreview() {
+            const code = this.previewCode;
+            if (!code || code.length < 3) return code || '';
+            // Format: "RT1234561" → "R T 123456 1"
+            // first char (R), space, second char (T/P), space, middle chars, space, last char
+            const first = code.charAt(0);
+            const second = code.charAt(1);
+            const last = code.charAt(code.length - 1);
+            const middle = code.slice(2, code.length - 1);
+            return first + ' ' + second + ' ' + middle + ' ' + last;
         }
     },
 
@@ -161,21 +163,17 @@ const NewRetrievalCode = {
         fetchSuggestions() {
             const q = this.contractNumber.trim();
             if (q.length < 2) return;
-            fetch('./src/model/ajax/ajax_newRetrievalCode_view.php?action=search&q=' + encodeURIComponent(q))
-                .then(res => res.json())
+            fetch('./model/ajax/ajax_newRetrievalCode_view.php?action=search&q=' + encodeURIComponent(q))
+                .then(res => handleAjaxResponse(res, 'Errore nella ricerca contratti'))
                 .then(json => {
-                    if (json.success) {
-                        this.suggestions = (json.data || []).slice(0, 10);
-                        this.showSuggestions = this.suggestions.length > 0;
-                    } else {
-                        showErrorToast(json.message || 'Errore nella ricerca contratti');
-                    }
+                    this.suggestions = (json.data || []).slice(0, 10);
+                    this.showSuggestions = this.suggestions.length > 0;
                 })
-                .catch(() => showErrorToast('Errore di connessione al server'));
+                .catch(err => handleNetworkError(err, 'ricerca contratti'));
         },
 
-        selectSuggestion(value) {
-            this.contractNumber = value;
+        selectSuggestion(s) {
+            this.contractNumber = s.bper_policy_number;
             this.showSuggestions = false;
             this.suggestions = [];
             this.fetchExistingCodes();
@@ -189,16 +187,12 @@ const NewRetrievalCode = {
         },
 
         fetchExistingCodes() {
-            fetch('./src/model/ajax/ajax_newRetrievalCode_view.php?action=tabella&bper_contract_number=' + encodeURIComponent(this.contractNumber))
-                .then(res => res.json())
+            fetch('./model/ajax/ajax_newRetrievalCode_view.php?action=tabella&bper_contract_number=' + encodeURIComponent(this.contractNumber))
+                .then(res => handleAjaxResponse(res, 'Errore nel caricamento della tabella'))
                 .then(json => {
-                    if (json.success) {
-                        this.existingCodes = json.data || [];
-                    } else {
-                        showErrorToast(json.message || 'Errore nel caricamento della tabella');
-                    }
+                    this.existingCodes = json.data || [];
                 })
-                .catch(() => showErrorToast('Errore di connessione al server'));
+                .catch(err => handleNetworkError(err, 'caricamento codici esistenti'));
         },
 
         fetchPreview() {
@@ -208,11 +202,24 @@ const NewRetrievalCode = {
             this.limitMessage = '';
 
             fetch(
-                './src/model/ajax/ajax_newRetrievalCode_view.php?action=calc' +
+                './model/ajax/ajax_newRetrievalCode_view.php?action=calc' +
                 '&bper_contract_number=' + encodeURIComponent(this.contractNumber) +
                 '&type=' + encodeURIComponent(this.type)
             )
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) {
+                        return res.json().catch(() => ({})).then(json => {
+                            showErrorToast(
+                                (json && json.message) || 'Errore nel calcolo anteprima (HTTP ' + res.status + ')',
+                                (json && json.exception) || null
+                            );
+                            var err = new Error('calc failed');
+                            err._toastShown = true;
+                            return Promise.reject(err);
+                        });
+                    }
+                    return res.json();
+                })
                 .then(json => {
                     if (json.success) {
                         this.previewCode = json.data.code || '';
@@ -226,7 +233,7 @@ const NewRetrievalCode = {
                         this.nextN = null;
                     }
                 })
-                .catch(() => showErrorToast('Errore di connessione al server'));
+                .catch(err => handleNetworkError(err, 'calcolo anteprima codice'));
         },
 
         onTypeChange() {
@@ -256,22 +263,18 @@ const NewRetrievalCode = {
                 type: this.type
             });
 
-            fetch('./src/model/ajax/ajax_newRetrievalCode_save.php', {
+            fetch('./model/ajax/ajax_newRetrievalCode_save.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: body.toString()
             })
-                .then(res => res.json())
-                .then(json => {
-                    if (json.success) {
-                        this.closeConfirmModal();
-                        this.fetchExistingCodes();
-                        this.fetchPreview();
-                    } else {
-                        showErrorToast(json.message || 'Errore durante l\'inserimento');
-                    }
+                .then(res => handleAjaxResponse(res, 'Errore durante l\'inserimento'))
+                .then(() => {
+                    this.closeConfirmModal();
+                    this.fetchExistingCodes();
+                    this.fetchPreview();
                 })
-                .catch(() => showErrorToast('Errore di connessione al server'));
+                .catch(err => handleNetworkError(err, 'inserimento codice recupero'));
         },
 
         onModalReopen(event) {

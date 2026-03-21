@@ -2,25 +2,28 @@
 
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use ReflectionClass;
+use RuntimeException;
+
 class OperationFactory
 {
     /**
-     * @throws \RuntimeException se l'operazione è disabilitata (HTTP 403)
+     * @throws RuntimeException se l'operazione è disabilitata (HTTP 403)
      */
     public static function create(string $className): AbstractOperation
     {
-        $fqcn = 'FirstAdvisory\\FAWill\\model\\Operations\\' . $className;
+        $operationNameClass = 'FirstAdvisory\\FAWill\\model\\Operations\\' . $className;
 
-        if (!class_exists($fqcn)) {
-            throw new \RuntimeException("Classe operazione non trovata: {$className}");
+        if (!class_exists($operationNameClass)) {
+            throw new RuntimeException("Classe operazione non trovata: $className");
         }
 
         /** @var AbstractOperation $operation */
-        $operation = new $fqcn();
+        $operation = new $operationNameClass();
 
         if (!$operation->isEnabled()) {
             http_response_code(403);
-            throw new \RuntimeException('Operazione non disponibile');
+            throw new RuntimeException('Operazione non disponibile');
         }
 
         return $operation;
@@ -40,24 +43,24 @@ class OperationFactory
 
         foreach ($files as $file) {
             $className = pathinfo($file, PATHINFO_FILENAME);
-            $fqcn = 'FirstAdvisory\\FAWill\\model\\Operations\\' . $className;
+            $operationNameClass = 'FirstAdvisory\\FAWill\\model\\Operations\\' . $className;
 
-            if (!class_exists($fqcn)) {
+            if (!class_exists($operationNameClass)) {
                 continue;
             }
 
-            $implements = class_implements($fqcn);
+            $implements = class_implements($operationNameClass);
             if ($implements === false || !in_array(OperationInterface::class, $implements, true)) {
                 continue;
             }
 
-            $ref = new \ReflectionClass($fqcn);
+            $ref = new ReflectionClass($operationNameClass);
             if ($ref->isAbstract() || $ref->isInterface()) {
                 continue;
             }
 
             /** @var OperationInterface $instance */
-            $instance = new $fqcn();
+            $instance = new $operationNameClass();
 
             if (!$instance->isVisible()) {
                 continue;

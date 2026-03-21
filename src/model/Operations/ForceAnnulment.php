@@ -1,6 +1,10 @@
 <?php declare(strict_types=1);
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
+
 class ForceAnnulment extends AbstractOperation {
     private ForceAnnulmentRepository $repository;
 
@@ -17,23 +21,26 @@ class ForceAnnulment extends AbstractOperation {
 
     /**
      * @return array<int, array<string, mixed>>
+     * @throws Throwable
      */
-    public function getOperations(AjaxRequest $request): array {
+    public function getOperations(): array {
         return $this->repository->getOperationList();
     }
 
     /**
+     * @param AjaxRequest $request
      * @return array{deleted: true}
+     * @throws Throwable
      */
     public function delete(AjaxRequest $request): array {
         $rawId = (string) $request->get('id', '0');
         if (!ctype_digit($rawId) || $rawId === '0') {
-            throw new \InvalidArgumentException('ID operazione non valido');
+            throw new InvalidArgumentException('ID operazione non valido');
         }
         $id = (int) $rawId;
         $data = $this->repository->getOperationData($id);
         if ($data === false) {
-            throw new \RuntimeException('Operazione non trovata');
+            throw new RuntimeException('Operazione non trovata');
         }
         $this->repository->deleteOperation($data['bper_policy_number'], $data['company_operation_id']);
         return ['deleted' => true];
