@@ -33,7 +33,7 @@ Standard di riferimento: **DDD (Domain-Driven Design) — Ubiquitous Language**
 | **QueryStack**            | Meccanismo del `TraitTryQuery` per accodare statement SQL (`addQueryInStack`) ed eseguirli in un'unica transazione (`tryQueryStack`). | Transazioni multi-statement |
 | **AjaxResponseHelper**    | Classe utility che incapsula le risposte Ajax in un formato JSON standard (`success`/`data`/`message`).       | Comunicazione frontend-backend         |
 | **OperationInterface**    | Interfaccia PHP che definisce il contratto per le operazioni (metodi di presentazione: titolo, icona, ecc.).  | Architettura Operation                 |
-| **AbstractOperation**     | Classe abstract PHP che implementa la logica comune (audit log, presentazione) ereditata da tutte le operazioni. | Architettura Operation            |
+| **AbstractOperation**     | Classe abstract PHP che implementa la logica comune (presentazione, accesso DB) ereditata da tutte le operazioni. L'audit log e gestito da `AjaxResponseHelper`. | Architettura Operation            |
 | **Repository**            | Classe PHP dedicata all'accesso database per una specifica operazione. Separa la persistenza dalla logica di business. | Architettura Operation          |
 
 ## Acronimi

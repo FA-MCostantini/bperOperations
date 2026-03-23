@@ -88,9 +88,9 @@ MENTRE uno o entrambi i campi del form sono vuoti, il bottone di inserimento DEV
 
 ### AC-FA-01: Caricamento tabella
 
-QUANDO l'operazione viene aperta, il sistema DEVE caricare e mostrare l'elenco delle operazioni con stato diverso da CANCELLED, in una tabella paginata (default 20 righe).
+QUANDO l'operazione viene aperta, il sistema DEVE caricare e mostrare l'elenco delle operazioni con stato diverso da COMPLETED, in una tabella paginata (default 20 righe). Le righe in stato CANCELLED DEVONO essere visibili ma senza icona cestino (nessuna azione possibile).
 
-**Verifica**: la tabella si popola, la paginazione mostra 20 righe, il selettore pagine funziona.
+**Verifica**: la tabella si popola con righe non-COMPLETED, la paginazione mostra 20 righe, le righe CANCELLED non hanno il cestino.
 
 ### AC-FA-02: Paginazione
 
@@ -134,9 +134,9 @@ QUANDO l'operazione viene aperta, il sistema DEVE mostrare i draft con documenti
 
 ### AC-RDS-02: Differenziazione visuale
 
-MENTRE una riga ha documenti in stato PENDING, la riga DEVE avere sfondo bianco e icona orologio cliccabile. MENTRE una riga ha documenti in stato ERROR, la riga DEVE avere sfondo grigio e icona X rossa non cliccabile.
+MENTRE una riga ha documenti in stato PENDING, la riga DEVE mostrare un'icona orologio gialla cliccabile. MENTRE una riga ha documenti in stato ERROR, la riga DEVE mostrare un'icona X rossa non cliccabile.
 
-**Verifica**: righe PENDING sono bianche e cliccabili, righe ERROR sono grigie e non cliccabili.
+**Verifica**: righe PENDING mostrano orologio giallo e sono cliccabili, righe ERROR mostrano X rossa e non sono cliccabili.
 
 ### AC-RDS-03: Cambio stato
 
@@ -212,6 +212,6 @@ QUANDO una chiamata Ajax restituisce `success: false`, il sistema DEVE mostrare 
 
 ### AC-ERR-02: Chiusura esplicita
 
-MENTRE un Toast di errore e visibile, il sistema DEVE mantenerlo visibile fino a che l'utente non lo chiude esplicitamente.
+MENTRE un Toast di errore e visibile, il sistema DEVE mantenerlo visibile per almeno 15 secondi. L'utente PUO' chiuderlo anticipatamente tramite il pulsante X.
 
-**Verifica**: provocare un errore — il Toast resta visibile anche dopo scroll o interazione con altri elementi. Si chiude solo cliccando la X.
+**Verifica**: provocare un errore — il Toast resta visibile per 15 secondi, oppure si chiude prima cliccando la X.

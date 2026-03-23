@@ -8,7 +8,7 @@
 
 - Tabella dedicata `public.operation_audit_log` con schema semplice (id, operation_name, payload JSONB, user_id INT, created_at TIMESTAMP).
 - Il log viene scritto solo dopo il successo dell'operazione.
-- La logica di log risiede nell'`AbstractOperation` e viene ereditata automaticamente.
+- La logica di log risiede in `AjaxResponseHelper::success()`, che scrive automaticamente il log quando riceve un'istanza di `AbstractOperation`.
 - Il `user_id` e temporaneamente `0` (integrazione autenticazione futura).
 
 ## Alternative considerate
@@ -20,11 +20,11 @@
 ## Motivazione
 
 - Semplicita: una tabella con JSONB e sufficiente per il caso d'uso.
-- Ereditarieta trasparente: nessun codice aggiuntivo per le nuove operazioni.
+- Trasparenza: nessun codice aggiuntivo per le nuove operazioni (il logging e delegato a `AjaxResponseHelper`).
 - Il payload JSONB consente flessibilita senza schema rigido per i dati loggati.
 
 ## Conseguenze
 
-- Ogni nuova operazione che estende `AbstractOperation` ha il log automatico.
+- Ogni nuova operazione che estende `AbstractOperation` ha il log automatico (tramite `AjaxResponseHelper`).
 - Il campo `user_id` dovra essere aggiornato quando l'autenticazione sara integrata.
 - Il payload dipende da cosa il frontend invia: non c'e validazione dello schema JSONB.

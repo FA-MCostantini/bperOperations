@@ -8,22 +8,27 @@ Documentazione delle query SQL utilizzate dalle operazioni. Ogni query include: 
 
 ### Q-NRC-01: Autocomplete codice polizza
 
-**Scopo**: ricerca codici polizza per l'autocomplete del form
+**Scopo**: ricerca codici polizza per l'autocomplete del form (cerca sia per codice BPER che per codice compagnia)
 **Tabella**: `ntt_bper.v_policy` (vista, ~500.000 record)
 **Tipo**: SELECT con LIKE
 
 ```sql
 SELECT bper_policy_number
+     , company_policy_number
   FROM ntt_bper.v_policy
  WHERE bper_policy_number LIKE :search_term
+    OR company_policy_number LIKE :search_term2
  LIMIT 10;
 ```
 
-| Parametro      | Tipo   | Esempio     | Note                                |
-|----------------|--------|-------------|-------------------------------------|
-| `:search_term` | string | `'054%'`    | Prefisso con `%` aggiunto dal backend. Min 2 caratteri |
+| Parametro       | Tipo   | Esempio     | Note                                |
+|-----------------|--------|-------------|-------------------------------------|
+| `:search_term`  | string | `'054%'`    | Prefisso con `%` aggiunto dal backend. Min 2 caratteri |
+| `:search_term2` | string | `'054%'`    | Stesso valore di `:search_term`, cerca su `company_policy_number` |
 
-**Performance**: la vista contiene ~500k record. Assicurarsi che esista un indice su `bper_policy_number`. Il `LIMIT 10` limita il risultato.
+**Performance**: la vista contiene ~500k record. Assicurarsi che esistano indici su `bper_policy_number` e `company_policy_number`. Il `LIMIT 10` limita il risultato.
+
+**Note**: restituisce entrambi i campi. Il frontend mostra `company_policy_number` tra parentesi quando diverso da `bper_policy_number`.
 
 ---
 
@@ -103,7 +108,7 @@ ON CONFLICT DO NOTHING;
 
 ### Q-FA-01: Elenco operazioni
 
-**Scopo**: mostrare le operazioni non cancellate
+**Scopo**: mostrare le operazioni non completate (include CANCELLED per visibilita storica)
 **Tabelle**: `t_policy_operation` JOIN `t_param_operation_type`
 **Tipo**: SELECT con JOIN
 
@@ -129,12 +134,12 @@ SELECT pot.operation_desc       AS "Operazione"
   FROM ntt_bper.t_policy_operation po
  INNER JOIN ntt_bper.t_param_operation_type pot
     ON po.t_param_operation_type_id = pot.id
- WHERE po.operation_status != 'CANCELLED';
+ WHERE po.operation_status NOT IN ('COMPLETED');
 ```
 
 **Performance**: ~14.000 record (con crescita di ~50/giorno). Indice consigliato su `operation_status`.
 
-**Note**: il campo `po.id` e nascosto in tabella, usato solo per la POST di cancellazione. Il frontend si adatta dinamicamente alle colonne restituite.
+**Note**: il campo `po.id` e nascosto in tabella, usato solo per la POST di cancellazione. Il frontend si adatta dinamicamente alle colonne restituite. Le colonne IBAN, LGRP e Codice Rapporto sono escluse lato frontend per ridurre lo scroll orizzontale. Le righe in stato CANCELLED sono visibili ma senza icona cestino (nessuna azione possibile).
 
 ---
 

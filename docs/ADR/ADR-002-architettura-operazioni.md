@@ -28,5 +28,5 @@ La scoperta delle operazioni e automatica: il bootstrapping scansiona la cartell
 ## Conseguenze
 
 - Ogni operazione deve rispettare il contratto `OperationInterface`.
-- L'audit log e ereditato trasparentemente via `AbstractOperation`.
+- L'audit log e gestito trasparentemente da `AjaxResponseHelper::success()` quando riceve un'istanza di `AbstractOperation`.
 - I file Ajax seguono una naming convention rigida (`ajax_<nome>_view.php` / `_save.php`).

@@ -100,7 +100,7 @@ Nessuna dipendenza npm/composer. Tutte le librerie sono caricate via CDN.
 |----------|-------------------------------------------------------------------------------------------------------------------|----------|
 | RF-FA-01 | Il sistema DEVE mostrare una tabella ordinabile, paginata (20/50/100) e filtrabile (testo libero su tutte le colonne). | MUST |
 | RF-FA-02 | L'interfaccia DEVE adattarsi dinamicamente alle colonne restituite dal backend.                                  | MUST     |
-| RF-FA-03 | La prima colonna DEVE contenere un'icona cestino (`bi-trash`) per la cancellazione.                              | MUST     |
+| RF-FA-03 | La prima colonna DEVE contenere un'icona cestino (`bi-trash`) per la cancellazione. Le righe in stato CANCELLED NON DEVONO mostrare l'icona cestino. | MUST     |
 | RF-FA-04 | Prima della cancellazione, il sistema DEVE chiedere conferma tramite modale.                                     | MUST     |
 | RF-FA-05 | La cancellazione DEVE eseguire soft-delete + hard-delete di docs e drafts in transazione atomica.                | MUST     |
 | RF-FA-06 | Dopo la cancellazione, la tabella DEVE essere ricaricata dal server.                                             | MUST     |
@@ -159,7 +159,7 @@ Nessuna dipendenza npm/composer. Tutte le librerie sono caricate via CDN.
 |-----------|-------------------------------------------------------------------------------------------------------------------|----------|
 | RF-ERR-01 | Tutte le risposte Ajax DEVONO usare il formato `AjaxResponseHelper`.                                             | MUST     |
 | RF-ERR-02 | Gli errori DEVONO essere mostrati come Toast Bootstrap sovrapposto a tutti gli elementi.                          | MUST     |
-| RF-ERR-03 | Il Toast DEVE restare visibile fino a chiusura esplicita dell'utente.                                             | MUST     |
+| RF-ERR-03 | Il Toast DEVE restare visibile per almeno 15 secondi e permettere chiusura anticipata tramite il pulsante X.      | MUST     |
 | RF-ERR-04 | Le risposte 403 (operazione disabilitata) DEVONO usare il messaggio "Operazione non disponibile".                | MUST     |
 
 ---
