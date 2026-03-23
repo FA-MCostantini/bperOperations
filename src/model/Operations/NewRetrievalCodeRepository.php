@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use PDO;
 use Throwable;
 use TraitTryQuery;
 
@@ -26,7 +27,7 @@ class NewRetrievalCodeRepository {
         if ($stmt === null) {
             return [];
         }
-        return $this->getQueryRecords($stmt) ?: [];
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /**
@@ -43,7 +44,7 @@ class NewRetrievalCodeRepository {
         if ($stmt === null) {
             return [];
         }
-        return $this->getQueryRecords($stmt) ?: [];
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /**

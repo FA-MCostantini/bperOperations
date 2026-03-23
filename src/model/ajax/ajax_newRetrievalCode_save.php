@@ -2,11 +2,11 @@
 require_once __DIR__ . '/../../../lib/autoloader.php';
 header('Content-Type: application/json');
 
-use FirstAdvisory\FAWill\model\Operations\{AjaxResponseHelper, OperationFactory};
+use FirstAdvisory\FAWill\model\Operations\{AjaxResponseHelper, NewRetrievalCode, OperationFactory};
 
 try {
     $request = AjaxResponseHelper::getRequest();
-    /** @var \FirstAdvisory\FAWill\model\Operations\NewRetrievalCode $operation */
+    /** @var NewRetrievalCode $operation */
     $operation = OperationFactory::create('NewRetrievalCode');
     $result = $operation->insert($request);
     AjaxResponseHelper::success($result, $operation);  // log automatico

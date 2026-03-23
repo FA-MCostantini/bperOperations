@@ -23,71 +23,65 @@ window.ForceAnnulment = {
             </div>
 
             <!-- Tabella dinamica -->
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover table-sm table-striped align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <!-- Colonna icona azione -->
-                            <th style="width:3rem;"></th>
-                            <th
-                                v-for="col in columns"
-                                :key="col"
-                                style="cursor: pointer; user-select: none;"
-                                @click="toggleSort(col)"
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border-0">
+                        <thead>
+                            <tr>
+                                <th style="width:3rem;"></th>
+                                <th
+                                    v-for="col in columns"
+                                    :key="col"
+                                    style="cursor: pointer; user-select: none;"
+                                    @click="toggleSort(col)"
+                                >
+                                    {{ col }}
+                                    <i v-if="sortColumn === col" :class="sortAsc ? 'bi bi-sort-up' : 'bi bi-sort-down'"></i>
+                                    <i v-else class="bi bi-arrow-down-up opacity-25"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="paginatedRows.length === 0">
+                                <td :colspan="columns.length + 1" class="text-center text-muted py-4">Nessun dato disponibile</td>
+                            </tr>
+                            <tr v-for="(row, rowIndex) in paginatedRows" :key="rowIndex">
+                                <td class="text-center">
+                                    <i
+                                        v-if="row['Stato'] !== 'CANCELLED'"
+                                        class="bi bi-trash action-icon icon-danger"
+                                        @click="deleteOperation(row.id)"
+                                        title="Elimina"
+                                    ></i>
+                                </td>
+                                <td v-for="col in columns" :key="col">{{ row[col] }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-card-footer d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2">
+                    <small class="text-muted">
+                        Pagina {{ currentPage }} di {{ totalPages }} &mdash; {{ filteredRows.length }} righe
+                    </small>
+                    <nav v-if="totalPages > 1">
+                        <ul class="pagination pagination-sm justify-content-center mb-0">
+                            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                                <button class="page-link" @click="currentPage--" :disabled="currentPage === 1">Precedente</button>
+                            </li>
+                            <li
+                                v-for="page in visiblePages"
+                                :key="page"
+                                class="page-item"
+                                :class="{ active: currentPage === page }"
                             >
-                                {{ col }}
-                                <span v-if="sortColumn === col">
-                                    <i :class="sortAsc ? 'bi bi-sort-up' : 'bi bi-sort-down'"></i>
-                                </span>
-                                <span v-else>
-                                    <i class="bi bi-arrow-down-up text-secondary opacity-50"></i>
-                                </span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-if="paginatedRows.length === 0">
-                            <td :colspan="columns.length + 1" class="text-center text-muted">Nessun dato disponibile</td>
-                        </tr>
-                        <tr v-for="(row, rowIndex) in paginatedRows" :key="rowIndex">
-                            <!-- Colonna trash separata -->
-                            <td class="text-center">
-                                <i
-                                    class="bi bi-trash text-danger"
-                                    style="cursor: pointer;"
-                                    @click="deleteOperation(row.id)"
-                                    title="Elimina"
-                                ></i>
-                            </td>
-                            <td v-for="col in columns" :key="col">{{ row[col] }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Info righe e paginazione -->
-            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center gap-2 mt-2">
-                <small class="text-muted">
-                    Pagina {{ currentPage }} di {{ totalPages }} &mdash; {{ filteredRows.length }} righe
-                </small>
-                <nav v-if="totalPages > 1">
-                    <ul class="pagination pagination-sm justify-content-center mb-0">
-                        <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                            <button class="page-link" @click="currentPage--" :disabled="currentPage === 1">Precedente</button>
-                        </li>
-                        <li
-                            v-for="page in visiblePages"
-                            :key="page"
-                            class="page-item"
-                            :class="{ active: currentPage === page }"
-                        >
-                            <button class="page-link" @click="currentPage = page">{{ page }}</button>
-                        </li>
-                        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                            <button class="page-link" @click="currentPage++" :disabled="currentPage === totalPages">Successivo</button>
-                        </li>
-                    </ul>
-                </nav>
+                                <button class="page-link" @click="currentPage = page">{{ page }}</button>
+                            </li>
+                            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                                <button class="page-link" @click="currentPage++" :disabled="currentPage === totalPages">Successivo</button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
 
             <!-- Conferma eliminazione (Vue-driven, no nested Bootstrap modal) -->

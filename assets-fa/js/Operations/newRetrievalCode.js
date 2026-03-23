@@ -56,22 +56,24 @@ window.NewRetrievalCode = {
             <!-- Existing codes table -->
             <div v-if="contractNumber && !showSuggestions">
                 <h6 class="mb-2">{{ existingCodes.length > 0 ? 'Codici esistenti' : 'Ancora nessun codice per questo contratto.' }}</h6>
-                <table class="table table-sm table-bordered table-striped">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>Data inserimento</th>
-                            <th>Codice</th>
-                            <th>Tipo operazione</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(row, idx) in existingCodes" :key="idx">
-                            <td>{{ row.insert_date }}</td>
-                            <td>{{ row.code }}</td>
-                            <td>{{ row.operation_type_code }}</td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="table-card">
+                    <table class="table table-hover align-middle border-0">
+                        <thead>
+                            <tr>
+                                <th>Data inserimento</th>
+                                <th>Codice</th>
+                                <th>Tipo operazione</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(row, idx) in existingCodes" :key="idx">
+                                <td>{{ row.insert_date }}</td>
+                                <td>{{ row.code }}</td>
+                                <td>{{ row.operation_type_code }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- Confirmation modal -->

@@ -24,3 +24,87 @@
     right: 20px;
     z-index: 9999;
 }
+
+/* ── Elevated Card table style ── */
+.table-card {
+    border-radius: 8px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    background: #fff;
+}
+
+.table-card .table {
+    margin-bottom: 0;
+}
+
+.table-card .table thead th {
+    background: transparent;
+    color: #6c757d;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    border-bottom: 2px solid #e9ecef;
+    border-top: none;
+    padding: 0.75rem 0.75rem;
+    white-space: nowrap;
+}
+
+.table-card .table tbody td {
+    border: none;
+    padding: 0.7rem 0.75rem;
+    color: #495057;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.table-card .table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-card .table-hover tbody tr:hover td {
+    background-color: #f0f7ff;
+}
+
+.table-card .table thead th .bi {
+    font-size: 0.75rem;
+}
+
+/* Action icons: muted by default, colored on hover */
+.table-card .action-icon {
+    color: #adb5bd;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    font-size: 1rem;
+}
+
+.table-card .action-icon.icon-danger:hover {
+    color: #dc3545;
+}
+
+.table-card .action-icon.icon-warning:hover {
+    color: #e8a217;
+}
+
+/* Pagination footer inside card */
+.table-card-footer {
+    padding: 0.6rem 0.75rem;
+    border-top: 1px solid #f1f3f5;
+    background: #fafbfc;
+}
+
+.table-card-footer .page-link {
+    border: none;
+    color: #6c757d;
+    font-size: 0.825rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 4px;
+}
+
+.table-card-footer .page-item.active .page-link {
+    background-color: #0d6efd;
+    color: #fff;
+}
+
+.table-card-footer .page-link:hover {
+    background-color: #e9ecef;
+}

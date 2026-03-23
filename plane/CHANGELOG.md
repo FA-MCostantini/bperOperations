@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.1] - 2026-03-23
+
+### UI — Stile tabelle "Elevated Card"
+- Nuovo stile grafico per tutte le tabelle: wrapper con bordi arrotondati (8px) e ombra leggera
+- Header trasparente con testo grigio e font-weight 600, senza più sfondo scuro (rimosso `table-dark`)
+- Rimossi bordi tra celle e zebra-striping; solo separatori orizzontali sottili
+- Hover righe con sfondo azzurro tenue (#f0f7ff)
+- Paginazione integrata nel footer della card con sfondo #fafbfc
+- Icona cestino (Annullamento Forzato): grigia di default, rossa al hover
+- Icone stato (Cambio Stato Documento): mantenute colorate (giallo orologio, rosso x)
+- Tabella codici esistenti (Inserimento Codice Riscatto): stesso stile card
+
+### Annullamento Forzato
+- Le righe in stato CANCELLED sono ora visibili in tabella ma senza icona cestino (nessuna azione possibile)
+
+### Fix
+- Toast di errore AJAX: durata forzata a 15 secondi via costruttore JS (il data-attribute non veniva rispettato)
+
 ## [0.2.0] - 2026-03-21
 
 ### Annullamento Forzato (forceAnnulment)

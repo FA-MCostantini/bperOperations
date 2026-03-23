@@ -24,85 +24,76 @@ window.ResetDocumentState = {
             </div>
 
             <!-- Table -->
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover table-striped table-sm align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th style="width:3rem;"></th>
-                            <th
-                                v-for="col in columns"
-                                :key="col"
-                                @click="toggleSort(col)"
-                                style="cursor:pointer; user-select:none;"
+            <div class="table-card">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border-0">
+                        <thead>
+                            <tr>
+                                <th style="width:3rem;"></th>
+                                <th
+                                    v-for="col in columns"
+                                    :key="col"
+                                    @click="toggleSort(col)"
+                                    style="cursor:pointer; user-select:none;"
+                                >
+                                    {{ col }}
+                                    <i v-if="sortColumn === col" :class="sortAsc ? 'bi bi-sort-up' : 'bi bi-sort-down'"></i>
+                                    <i v-else class="bi bi-arrow-down-up opacity-25"></i>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="paginatedRows.length === 0">
+                                <td :colspan="columns.length + 1" class="text-center text-muted py-4">
+                                    Nessun dato disponibile
+                                </td>
+                            </tr>
+                            <tr
+                                v-for="(row, idx) in paginatedRows"
+                                :key="idx"
                             >
-                                {{ col }}
-                                <i
-                                    v-if="sortColumn === col"
-                                    :class="sortAsc ? 'bi bi-sort-up' : 'bi bi-sort-down'"
-                                ></i>
-                                <i v-else class="bi bi-arrow-down-up text-secondary opacity-50"></i>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr
-                            v-if="paginatedRows.length === 0"
-                        >
-                            <td :colspan="columns.length + 1" class="text-center text-muted py-4">
-                                Nessun dato disponibile
-                            </td>
-                        </tr>
-                        <tr
-                            v-for="(row, idx) in paginatedRows"
-                            :key="idx"
-                            :class="isPending(row) ? '' : 'bg-light'"
-                            :style="isPending(row) ? 'background-color: #fff;' : ''"
-                        >
-                            <!-- Status icon column -->
-                            <td class="text-center">
-                                <i
-                                    v-if="isPending(row)"
-                                    class="bi bi-clock-history text-warning fs-5"
-                                    style="cursor:pointer;"
-                                    title="Reset stato documento"
-                                    @click="changeStatus(row['id'])"
-                                ></i>
-                                <i
-                                    v-else
-                                    class="bi bi-x-circle-fill text-danger fs-5"
-                                    title="Nessun documento pending"
-                                ></i>
-                            </td>
-                            <!-- Data columns -->
-                            <td v-for="col in columns" :key="col">{{ row[col] }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center mt-2 flex-wrap gap-2">
-                <small class="text-muted">
-                    Pagina {{ currentPage }} di {{ totalPages }} &mdash; {{ filteredRows.length }} righe
-                </small>
-                <nav>
-                    <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item" :class="{ disabled: currentPage === 1 }">
-                            <a class="page-link" href="#" @click.prevent="currentPage > 1 && currentPage--">Precedente</a>
-                        </li>
-                        <li
-                            v-for="page in visiblePages"
-                            :key="page"
-                            class="page-item"
-                            :class="{ active: page === currentPage }"
-                        >
-                            <a class="page-link" href="#" @click.prevent="currentPage = page">{{ page }}</a>
-                        </li>
-                        <li class="page-item" :class="{ disabled: currentPage === totalPages }">
-                            <a class="page-link" href="#" @click.prevent="currentPage < totalPages && currentPage++">Successivo</a>
-                        </li>
-                    </ul>
-                </nav>
+                                <td class="text-center">
+                                    <i
+                                        v-if="isPending(row)"
+                                        class="bi bi-clock-history text-warning fs-5"
+                                        style="cursor:pointer;"
+                                        title="Reset stato documento"
+                                        @click="changeStatus(row['id'])"
+                                    ></i>
+                                    <i
+                                        v-else
+                                        class="bi bi-x-circle-fill text-danger fs-5"
+                                        title="Nessun documento pending"
+                                    ></i>
+                                </td>
+                                <td v-for="col in columns" :key="col">{{ row[col] }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-card-footer d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <small class="text-muted">
+                        Pagina {{ currentPage }} di {{ totalPages }} &mdash; {{ filteredRows.length }} righe
+                    </small>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item" :class="{ disabled: currentPage === 1 }">
+                                <a class="page-link" href="#" @click.prevent="currentPage > 1 && currentPage--">Precedente</a>
+                            </li>
+                            <li
+                                v-for="page in visiblePages"
+                                :key="page"
+                                class="page-item"
+                                :class="{ active: page === currentPage }"
+                            >
+                                <a class="page-link" href="#" @click.prevent="currentPage = page">{{ page }}</a>
+                            </li>
+                            <li class="page-item" :class="{ disabled: currentPage === totalPages }">
+                                <a class="page-link" href="#" @click.prevent="currentPage < totalPages && currentPage++">Successivo</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
             </div>
 
             <!-- Conferma reset (Vue-driven, no nested Bootstrap modal) -->

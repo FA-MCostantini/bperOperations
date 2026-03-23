@@ -2,11 +2,11 @@
 require_once __DIR__ . '/../../../lib/autoloader.php';
 header('Content-Type: application/json');
 
-use FirstAdvisory\FAWill\model\Operations\{AjaxResponseHelper, OperationFactory};
+use FirstAdvisory\FAWill\model\Operations\{AjaxResponseHelper, ForceAnnulment, OperationFactory};
 
 try {
     $request = AjaxResponseHelper::getRequest();
-    /** @var \FirstAdvisory\FAWill\model\Operations\ForceAnnulment $operation */
+    /** @var ForceAnnulment $operation */
     $operation = OperationFactory::create('ForceAnnulment');
 
     switch ($request->action) {

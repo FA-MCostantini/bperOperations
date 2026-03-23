@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 namespace FirstAdvisory\FAWill\model\Operations;
 
+use PDO;
 use Throwable;
 use TraitTryQuery;
 
@@ -35,12 +36,12 @@ class ForceAnnulmentRepository {
                FROM ntt_bper.t_policy_operation po
               INNER JOIN ntt_bper.t_param_operation_type pot
                  ON po.t_param_operation_type_id = pot.id
-              WHERE po.operation_status NOT IN ('CANCELLED', 'COMPLETED')"
+              WHERE po.operation_status NOT IN ('COMPLETED')"
         );
         if ($stmt === null) {
             return [];
         }
-        return $this->getQueryRecords($stmt) ?: [];
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 
     /**
@@ -72,20 +73,45 @@ class ForceAnnulmentRepository {
 
         // Q-FA-03: Soft-delete
         $this->addQueryInStack(
-            "UPDATE ntt_bper.t_policy_operation SET operation_status = 'CANCELLED', cancelled_date = NOW() WHERE bper_policy_number = :bper_policy_number AND company_operation_id = :company_operation_id",
+            "UPDATE ntt_bper.t_policy_operation
+                     SET operation_status = 'CANCELLED'
+                       , cancelled_date = NOW()
+                   WHERE bper_policy_number = :bper_policy_number
+                     AND company_operation_id = :company_operation_id",
             $params
         );
 
         // Q-FA-04: Hard-delete docs
         $this->addQueryInStack(
-            "DELETE FROM ntt_bper.t_int_policy_operation_docs doc USING ntt_bper.t_policy_operation_draft draft JOIN ntt_bper.t_policy_operation op ON draft.policy_operation_id = op.id WHERE doc.t_policy_operation_draft_id = draft.id AND op.bper_policy_number = :bper_policy_number AND op.company_operation_id = :company_operation_id",
+            "DELETE FROM ntt_bper.t_int_policy_operation_docs doc
+                   USING ntt_bper.t_policy_operation_draft draft JOIN ntt_bper.t_policy_operation op ON draft.policy_operation_id = op.id
+                   WHERE doc.t_policy_operation_draft_id = draft.id
+                     AND op.bper_policy_number = :bper_policy_number
+                     AND op.company_operation_id = :company_operation_id",
             $params
         );
 
+        $this->addQueryInStack(
+            "delete from ntt_bper.t_ath_policy_operation_docs pod
+                   using ntt_bper.t_policy_operation_draft pof
+                   where pod.t_policy_operation_draft_id = pof.id
+                     and policy_operation_id = (SELECT id
+                                                  FROM ntt_bper.t_policy_operation
+                                                 WHERE bper_policy_number = :bper_policy_number
+                                                   AND company_operation_id = :company_operation_id)
+                     AND bper_policy_number = :bper_policy_number",
+            $params
+        );
+;
         // Q-FA-05: Hard-delete draft
         $this->addQueryInStack(
-            "DELETE FROM ntt_bper.t_policy_operation_draft WHERE policy_operation_id = (SELECT id FROM ntt_bper.t_policy_operation WHERE bper_policy_number = :bper_policy_number AND company_operation_id = :company_operation_id) AND bper_policy_number = :bper_policy_number",
-            [':bper_policy_number' => $bperPolicyNumber, ':company_operation_id' => $companyOperationId]
+            "DELETE FROM ntt_bper.t_policy_operation_draft
+                   WHERE policy_operation_id = (SELECT id
+                                                  FROM ntt_bper.t_policy_operation
+                                                 WHERE bper_policy_number = :bper_policy_number
+                                                   AND company_operation_id = :company_operation_id)
+                     AND bper_policy_number = :bper_policy_number",
+            $params
         );
 
         $this->tryQueryStack();

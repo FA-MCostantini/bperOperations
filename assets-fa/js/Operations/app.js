@@ -146,7 +146,7 @@ function showErrorToast(message, detail) {
     container.insertAdjacentHTML('beforeend', toastHtml);
 
     const toastEl = document.getElementById(toastId);
-    const toast = new bootstrap.Toast(toastEl);
+    const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 15000 });
     toast.show();
 
     toastEl.addEventListener('hidden.bs.toast', function () {

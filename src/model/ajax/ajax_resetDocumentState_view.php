@@ -2,11 +2,11 @@
 require_once __DIR__ . '/../../../lib/autoloader.php';
 header('Content-Type: application/json');
 
-use FirstAdvisory\FAWill\model\Operations\{AjaxResponseHelper, OperationFactory};
+use FirstAdvisory\FAWill\model\Operations\{AjaxResponseHelper, OperationFactory, ResetDocumentState};
 
 try {
     $request = AjaxResponseHelper::getRequest();
-    /** @var \FirstAdvisory\FAWill\model\Operations\ResetDocumentState $operation */
+    /** @var ResetDocumentState $operation */
     $operation = OperationFactory::create('ResetDocumentState');
 
     switch ($request->action) {
