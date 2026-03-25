@@ -299,4 +299,44 @@ class NewRetrievalCodeTest extends BperTestCase
         $operation = new NewRetrievalCode();
         $this->assertSame('newRetrievalCode', $operation->getName());
     }
+
+    // -------------------------------------------------------------------------
+    // U-NRC-09: getExistingCodes returns operation_type_code as DB values (_RISTO/_RISPA)
+    // Ensures JS hasUnconsumedCodeForType() can match on the correct codes.
+    // -------------------------------------------------------------------------
+
+    /**
+     * U-NRC-09: getExistingCodes returns _RISTO/_RISPA in operation_type_code field
+     */
+    public function testUNRC09_ExistingCodesReturnDbOperationTypeCodes(): void
+    {
+        // Insert one code for each type
+        $pdo = $this->getConnection();
+        $contractNumber = 'TEST_OPTYPE_CHK';
+        $pdo->exec(
+            "INSERT INTO ntt_bper.t_ath_policy_auth_code
+                 (code, insert_date, bper_contract_number, operation_type_code)
+             VALUES
+               ('RT{$contractNumber}1', NOW(), '{$contractNumber}', '_RISTO'),
+               ('RP{$contractNumber}1', NOW(), '{$contractNumber}', '_RISPA')
+             ON CONFLICT DO NOTHING"
+        );
+
+        $operation = new NewRetrievalCode();
+        $request = new AjaxRequest('GET', 'tabella', [
+            'bper_contract_number' => $contractNumber,
+        ]);
+
+        $codes = $operation->getExistingCodes($request);
+
+        $this->assertCount(2, $codes);
+
+        $opTypes = array_column($codes, 'operation_type_code');
+        $this->assertContains('_RISTO', $opTypes, 'Must contain _RISTO for tipo T');
+        $this->assertContains('_RISPA', $opTypes, 'Must contain _RISPA for tipo P');
+
+        // Verify these are NOT the short codes 'T'/'P'
+        $this->assertNotContains('T', $opTypes);
+        $this->assertNotContains('P', $opTypes);
+    }
 }

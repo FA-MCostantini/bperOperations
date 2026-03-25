@@ -40,8 +40,7 @@ class AjaxResponseHelper
             $logger = new OperationAuditLogger();
             $logger->log(
                 $operation->getName(),
-                self::$currentRequest->params,
-                $operation->getCurrentUserId()
+                self::$currentRequest->params
             );
         }
 

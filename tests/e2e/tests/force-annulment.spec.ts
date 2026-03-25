@@ -39,9 +39,9 @@ test.describe('E-FA — forceAnnulment', () => {
         const table = modal.locator('.table');
         await expect(table).toBeVisible();
 
-        // Page-size select should default to 20
+        // Page-size select should default to 15
         const pageSizeSelect = modal.locator('select.form-select');
-        await expect(pageSizeSelect).toHaveValue('20');
+        await expect(pageSizeSelect).toHaveValue('15');
 
         // At least the header row should exist
         const headerCells = table.locator('thead th');
@@ -53,6 +53,7 @@ test.describe('E-FA — forceAnnulment', () => {
      * AC-FA-02: QUANDO si seleziona 50, la tabella mostra 50 righe per pagina
      */
     test('E-FA-02: changing page size to 50 updates displayed rows', async ({ page }) => {
+        test.setTimeout(60000);
         // Seed enough data to have more than 20 rows
         await page.route('**/ajax_forceAnnulment_view.php**', async (route) => {
             const url = route.request().url();

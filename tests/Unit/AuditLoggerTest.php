@@ -2,13 +2,12 @@
 
 require_once __DIR__ . '/../BperTestCase.php';
 
-use FirstAdvisory\FAWill\model\Operations\NewRetrievalCode;
 use FirstAdvisory\FAWill\model\Operations\OperationAuditLogger;
 
 /**
  * Unit tests for OperationAuditLogger.
  *
- * Test IDs: U-LOG-01, U-LOG-02, U-LOG-03
+ * Test IDs: U-LOG-01, U-LOG-03
  */
 class AuditLoggerTest extends BperTestCase
 {
@@ -31,7 +30,7 @@ class AuditLoggerTest extends BperTestCase
         $logger  = new OperationAuditLogger();
         $payload = ['bper_contract_number' => 'TEST_054', 'type' => 'T'];
 
-        $logger->log(self::TEST_OPERATION_NAME, $payload, 0);
+        $logger->log(self::TEST_OPERATION_NAME, $payload);
 
         $pdo  = $this->getConnection();
         $stmt = $pdo->prepare(
@@ -49,20 +48,6 @@ class AuditLoggerTest extends BperTestCase
     }
 
     // -------------------------------------------------------------------------
-    // U-LOG-02: getCurrentUserId() on any AbstractOperation returns 0
-    // -------------------------------------------------------------------------
-
-    /**
-     * U-LOG-02: AbstractOperation::getCurrentUserId() always returns 0 (no auth context)
-     */
-    public function testULOG02_GetCurrentUserIdReturnsZero(): void
-    {
-        // NewRetrievalCode extends AbstractOperation which provides getCurrentUserId()
-        $operation = new NewRetrievalCode();
-        $this->assertSame(0, $operation->getCurrentUserId());
-    }
-
-    // -------------------------------------------------------------------------
     // U-LOG-03: Logged record contains correct operation_name and payload
     // -------------------------------------------------------------------------
 
@@ -74,7 +59,7 @@ class AuditLoggerTest extends BperTestCase
         $logger  = new OperationAuditLogger();
         $payload = ['bper_contract_number' => 'TEST_054', 'type' => 'P', 'extra' => 'value'];
 
-        $logger->log(self::TEST_OPERATION_NAME, $payload, 0);
+        $logger->log(self::TEST_OPERATION_NAME, $payload);
 
         $pdo  = $this->getConnection();
         $stmt = $pdo->prepare(
@@ -89,7 +74,6 @@ class AuditLoggerTest extends BperTestCase
 
         $this->assertNotFalse($row, 'Log record must be found');
         $this->assertSame(self::TEST_OPERATION_NAME, $row['operation_name']);
-        $this->assertSame(0, (int) $row['user_id']);
 
         $decoded = json_decode($row['payload'], true);
         $this->assertIsArray($decoded);

@@ -77,8 +77,12 @@
     font-size: 1rem;
 }
 
-.table-card .action-icon.icon-danger:hover {
+.table-card .action-icon.icon-danger {
     color: #dc3545;
+}
+
+.table-card .action-icon.icon-danger:hover {
+    color: #a71d2a;
 }
 
 .table-card .action-icon.icon-warning:hover {
@@ -107,4 +111,54 @@
 
 .table-card-footer .page-link:hover {
     background-color: #e9ecef;
+}
+
+/* NRC tab-styled header (linguetta) */
+.nrc-table-tab {
+    display: inline-block;
+    background: #fff;
+    color: #495057;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 0.5rem 1.1rem 0.45rem;
+    border-radius: 8px 8px 0 0;
+    border: 1px solid #e9ecef;
+    border-bottom: 1px solid #fff;
+    position: relative;
+    top: 1px;
+    z-index: 1;
+    letter-spacing: 0.02em;
+}
+
+.nrc-table-card {
+    border: 1px solid #e9ecef;
+    border-radius: 0 8px 8px 8px;
+}
+
+/* NRC insert icon (+ button) */
+.nrc-insert-icon {
+    font-size: 1.6rem;
+    color: #0d6efd;
+    cursor: pointer;
+    transition: color 0.15s ease, transform 0.15s ease;
+    vertical-align: middle;
+}
+
+.nrc-insert-icon:hover {
+    color: #0a58ca;
+    transform: scale(1.15);
+}
+
+/* Unconsumed code rows: green tint + bold */
+.table-card .table tbody tr.row-unconsumed td {
+    background-color: #e8f5e9;
+    font-weight: 600;
+}
+
+.table-card .table tbody tr.row-unconsumed td.code-unconsumed {
+    font-size: 1rem;
+}
+
+.table-card .table-hover tbody tr.row-unconsumed:hover td {
+    background-color: #c8e6c9;
 }

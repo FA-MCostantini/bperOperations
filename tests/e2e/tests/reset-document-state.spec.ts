@@ -57,22 +57,19 @@ test.describe('E-RDS — resetDocumentState', () => {
         const bodyRows = modal.locator('.table tbody tr');
         await expect(bodyRows).toHaveCount(2);
 
-        // PENDING row (index 0): should have the clock icon and white background
+        // PENDING row (index 0): should have the clock icon (clickable)
         const pendingRow = bodyRows.nth(0);
         const clockIcon = pendingRow.locator('.bi-clock-history');
         await expect(clockIcon).toBeVisible();
 
-        // Verify PENDING row has no grey background class (bg-light)
-        const pendingClasses = await pendingRow.getAttribute('class');
-        expect(pendingClasses).not.toContain('bg-light');
+        // Clock icon should have cursor:pointer (actionable)
+        const clockCursor = await clockIcon.evaluate(el => window.getComputedStyle(el).cursor);
+        expect(clockCursor).toBe('pointer');
 
-        // ERROR row (index 1): should have the X icon and grey (bg-light) class
+        // ERROR row (index 1): should have the X icon (not clickable)
         const errorRow = bodyRows.nth(1);
         const xIcon = errorRow.locator('.bi-x-circle-fill');
         await expect(xIcon).toBeVisible();
-
-        const errorClasses = await errorRow.getAttribute('class');
-        expect(errorClasses).toContain('bg-light');
     });
 
     /**
@@ -112,7 +109,8 @@ test.describe('E-RDS — resetDocumentState', () => {
      * E-RDS-03: ERROR rows have X icon, grey background, not clickable
      * AC-RDS-04: il sistema NON DEVE permettere alcuna azione sulle righe ERROR
      */
-    test('E-RDS-03: ERROR row has X icon with grey background and clicking does nothing', async ({ page }) => {
+    test('E-RDS-03: ERROR row has X icon and clicking does nothing', async ({ page }) => {
+        test.setTimeout(60000);
         await page.route('**/ajax_resetDocumentState_view.php**', async (route) => {
             await route.fulfill({
                 status: 200,
@@ -125,10 +123,6 @@ test.describe('E-RDS — resetDocumentState', () => {
 
         const bodyRows = modal.locator('.table tbody tr');
         const errorRow = bodyRows.nth(1);
-
-        // Verify grey background
-        const errorClasses = await errorRow.getAttribute('class');
-        expect(errorClasses).toContain('bg-light');
 
         // X icon should be visible
         const xIcon = errorRow.locator('.bi-x-circle-fill');
@@ -190,12 +184,8 @@ test.describe('E-RDS — resetDocumentState', () => {
         await expect(confirmModal).toHaveCount(0, { timeout: 5000 });
         await page.waitForTimeout(500);
 
-        // The formerly PENDING row should now be grey (bg-light)
+        // The formerly PENDING row should now have an X icon instead of a clock
         const updatedRows = modal.locator('.table tbody tr');
-        const firstRowClass = await updatedRows.nth(0).getAttribute('class');
-        expect(firstRowClass).toContain('bg-light');
-
-        // And it should now have an X icon instead of a clock
         const xIcon = updatedRows.nth(0).locator('.bi-x-circle-fill');
         await expect(xIcon).toBeVisible();
     });

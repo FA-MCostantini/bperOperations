@@ -1,20 +1,21 @@
 window.NewRetrievalCode = {
     template: `
         <div>
-            <!-- Input row: type dropdown + contract autocomplete + insert button -->
-            <div class="row g-2 align-items-end mb-3">
-                <div class="col-auto">
+            <!-- Input row: type dropdown + contract autocomplete + preview + insert icon -->
+            <div class="d-flex align-items-end mb-3 gap-2">
+                <div>
                     <label class="form-label mb-1">Tipo</label>
-                    <select class="form-select" v-model="type" @change="onTypeChange">
+                    <select class="form-select" style="height: 38px;" v-model="type" @change="onTypeChange">
                         <option value="T">Riscatto Totale</option>
                         <option value="P">Riscatto Parziale</option>
                     </select>
                 </div>
-                <div class="col" style="position: relative;">
+                <div style="position: relative; width: 220px; min-width: 180px;">
                     <label class="form-label mb-1">Numero Contratto</label>
                     <input
                         type="text"
                         class="form-control"
+                        style="height: 38px;"
                         placeholder="Cerca contratto..."
                         v-model="contractNumber"
                         @input="onInput"
@@ -35,15 +36,19 @@ window.NewRetrievalCode = {
                         >{{ s.bper_policy_number }}<span v-if="s.company_policy_number && s.company_policy_number !== s.bper_policy_number" class="text-muted ms-1">({{ s.company_policy_number }})</span></li>
                     </ul>
                 </div>
-                <div class="col-auto">
+                <div class="ms-3">
                     <label class="form-label mb-1 d-block">Anteprima</label>
-                    <div class="form-control-plaintext fw-bold" style="min-width: 120px;">{{ formattedPreview || '\u2014' }}</div>
+                    <div class="d-flex align-items-center fw-bold text-primary" style="height: 38px; font-size: 1.05rem; letter-spacing: 0.04em; min-width: 130px;">{{ formattedPreview || '\u2014' }}</div>
                 </div>
-                <div class="col-auto">
+                <div class="ms-3">
                     <label class="form-label mb-1 d-block">&nbsp;</label>
-                    <button class="btn btn-primary btn-lg d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: 12px;" :disabled="!canInsert" @click="insertCode" title="Inserisci">
-                        <i class="bi bi-plus-lg fs-4"></i>
-                    </button>
+                    <i
+                        class="bi nrc-insert-icon"
+                        :class="canInsert ? 'bi-plus-circle-fill' : 'bi-plus-circle'"
+                        :style="{ opacity: canInsert ? 1 : 0.35, cursor: canInsert ? 'pointer' : 'not-allowed' }"
+                        @click="insertCode"
+                        title="Inserisci codice"
+                    ></i>
                 </div>
             </div>
 
@@ -55,21 +60,27 @@ window.NewRetrievalCode = {
 
             <!-- Existing codes table -->
             <div v-if="contractNumber && !showSuggestions">
-                <h6 class="mb-2">{{ existingCodes.length > 0 ? 'Codici esistenti' : 'Ancora nessun codice per questo contratto.' }}</h6>
-                <div class="table-card">
+                <div v-if="existingCodes.length === 0" class="text-muted fst-italic mt-2">Ancora nessun codice per questo contratto.</div>
+                <div v-else class="table-card nrc-table-card">
+                    <div class="nrc-table-tab">Codici esistenti</div>
                     <table class="table table-hover align-middle border-0">
                         <thead>
                             <tr>
                                 <th>Data inserimento</th>
                                 <th>Codice</th>
                                 <th>Tipo operazione</th>
+                                <th style="width: 3rem; text-align: center;">Stato</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(row, idx) in existingCodes" :key="idx">
+                            <tr v-for="(row, idx) in existingCodes" :key="idx" :class="{ 'row-unconsumed': isUnconsumed(row) }">
                                 <td>{{ row.insert_date }}</td>
-                                <td>{{ row.code }}</td>
-                                <td>{{ row.operation_type_code }}</td>
+                                <td :class="{ 'code-unconsumed': isUnconsumed(row) }">{{ row.code }}</td>
+                                <td>{{ row.operation_type_code === '_RISTO' ? 'Riscatto Totale' : 'Riscatto Parziale' }}</td>
+                                <td class="text-center">
+                                    <i v-if="isUnconsumed(row)" class="bi bi-check-circle-fill text-success" title="Valido"></i>
+                                    <i v-else class="bi bi-dash-circle text-muted" title="Consumato"></i>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -85,7 +96,7 @@ window.NewRetrievalCode = {
                             <button type="button" class="btn-close" @click="closeConfirmModal"></button>
                         </div>
                         <div class="modal-body">
-                            <p>Stai per inserire il seguente codice di recupero:</p>
+                            <p>Stai per inserire il seguente codice di riscatto:</p>
                             <ul>
                                 <li><strong>Contratto:</strong> {{ contractNumber }}</li>
                                 <li><strong>Tipo:</strong> {{ type === 'T' ? 'Riscatto Totale' : 'Riscatto Parziale' }}</li>
@@ -244,8 +255,32 @@ window.NewRetrievalCode = {
             }
         },
 
+        isUnconsumed(row) {
+            return row.consumed === false || row.consumed === 'f';
+        },
+
+        operationTypeCodeForCurrentType() {
+            return this.type === 'T' ? '_RISTO' : '_RISPA';
+        },
+
+        hasUnconsumedCodeForType() {
+            const opCode = this.operationTypeCodeForCurrentType();
+            return this.existingCodes.some(row =>
+                (row.consumed === false || row.consumed === 'f') &&
+                row.operation_type_code === opCode
+            );
+        },
+
         insertCode() {
             if (!this.canInsert) return;
+
+            if (this.hasUnconsumedCodeForType()) {
+                const typeLabel = this.type === 'T' ? 'Riscatto Totale' : 'Riscatto Parziale';
+                if (!confirm('Esiste già un codice valido per il contratto ' + this.contractNumber + ' e tipo operazione ' + typeLabel + ', sei sicuro di volerne aggiungere un altro?')) {
+                    return;
+                }
+            }
+
             if (!this.confirmModal) {
                 const modalEl = document.getElementById('confirmInsertModal');
                 this.confirmModal = new bootstrap.Modal(modalEl);
@@ -276,7 +311,7 @@ window.NewRetrievalCode = {
                     this.fetchExistingCodes();
                     this.fetchPreview();
                 })
-                .catch(err => handleNetworkError(err, 'inserimento codice recupero'));
+                .catch(err => handleNetworkError(err, 'inserimento codice riscatto'));
         },
 
         onModalReopen(event) {

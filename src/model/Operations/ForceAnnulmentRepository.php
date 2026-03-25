@@ -15,14 +15,14 @@ class ForceAnnulmentRepository {
     public function getOperationList(): array {
         // Q-FA-01: large SELECT with JOIN, WHERE status != 'CANCELLED'
         $stmt = $this->tryQuery(
-            "SELECT pot.operation_desc AS \"Operazione\"
-                  , pot.operation_code AS \"Codice\"
-                  , po.operation_status AS \"Stato\"
-                  , po.company_code AS \"Compagnia\"
+            "SELECT po.operation_status AS \"Stato\"
+                       , pot.operation_desc || ' ('|| pot.operation_code || ')' AS \"Operazione\"
                   , po.company_policy_number AS \"Codice Compagnia\"
                   , po.bper_policy_number AS \"Codice Banca\"
+                  , po.product_code AS \"Codice Prodotto\"
+                  , po.company_code AS \"Compagnia\"
                   , po.premium AS \"Premio\"
-                  , po.sent_date AS \"Data invio\"
+                  , po.sent_date::date AS \"Data invio\"
                   , po.user_abi AS \"ABI\"
                   , po.user_agency_code AS \"AGENZIA\"
                   , po.user_cab AS \"CAB\"
@@ -31,12 +31,11 @@ class ForceAnnulmentRepository {
                   , po.fiscal_code AS \"Cod. fisc.\"
                   , po.fiscal_code_lgrp AS \"LGRP\"
                   , po.code_rapporto AS \"Codice Rapporto\"
-                  , po.product_code AS \"Codice Prodotto\"
                   , po.id
                FROM ntt_bper.t_policy_operation po
-              INNER JOIN ntt_bper.t_param_operation_type pot
-                 ON po.t_param_operation_type_id = pot.id
-              WHERE po.operation_status NOT IN ('COMPLETED')"
+              INNER JOIN ntt_bper.t_param_operation_type pot ON po.t_param_operation_type_id = pot.id
+               where po.sent_date::date >= CURRENT_DATE - INTERVAL '60 days'
+                 order by po.id desc"
         );
         if ($stmt === null) {
             return [];

@@ -170,9 +170,9 @@ class ForceAnnulmentIntegrationTest extends BperTestCase
     }
 
     /**
-     * I-FA-02: getOperations() returns only non-CANCELLED records.
+     * I-FA-02: getOperations() includes CANCELLED records (agreed with client).
      */
-    public function testGetOperationsExcludesCancelledRecords(): void
+    public function testGetOperationsIncludesCancelledRecords(): void
     {
         $pdo = $this->getConnection();
 
@@ -198,17 +198,15 @@ class ForceAnnulmentIntegrationTest extends BperTestCase
 
         try {
             $operation = new ForceAnnulment();
-            $request   = new AjaxRequest('GET', '', []);
-            $rows      = $operation->getOperations($request);
+            $rows      = $operation->getOperations();
 
             $this->assertIsArray($rows);
 
-            // The PENDING test operation must appear
-            $ids = array_column($rows, 'id');
-            $this->assertContains($this->operationId, $ids);
+            $ids = array_map('intval', array_column($rows, 'id'));
 
-            // The CANCELLED operation must NOT appear
-            $this->assertNotContains($cancelledId, $ids);
+            // Both PENDING and CANCELLED operations must appear
+            $this->assertContains($this->operationId, $ids);
+            $this->assertContains($cancelledId, $ids);
         } finally {
             $pdo->prepare("DELETE FROM ntt_bper.t_policy_operation WHERE id = :id")
                 ->execute([':id' => $cancelledId]);
@@ -241,7 +239,7 @@ class ForceAnnulmentIntegrationTest extends BperTestCase
 
         // Manually log as AjaxResponseHelper::success() would in a real request
         $logger = new OperationAuditLogger();
-        $logger->log($operation->getName(), $request->params, $operation->getCurrentUserId());
+        $logger->log($operation->getName(), $request->params);
 
         $pdo  = $this->getConnection();
         $stmt = $pdo->prepare(

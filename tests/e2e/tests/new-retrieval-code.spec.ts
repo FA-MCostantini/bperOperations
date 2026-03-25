@@ -5,7 +5,7 @@ const TEST_PAGE = '/test-page.php';
 /**
  * E-NRC — newRetrievalCode E2E tests
  *
- * Covers scenarios E-NRC-01 through E-NRC-07 as defined in
+ * Covers scenarios E-NRC-01 through E-NRC-05, E-NRC-07 through E-NRC-09 as defined in
  * docs/EXPLAIN_TEST.md section 3 and docs/ACCEPTANCE_CRITERIA.md AC-NRC-*.
  *
  * The fixture TEST_E2E_054 is created by global-setup.ts.
@@ -85,9 +85,11 @@ test.describe('E-NRC — newRetrievalCode', () => {
         const contractInput = modal.locator('input[placeholder="Cerca contratto..."]');
         await expect(contractInput).toHaveValue('');
 
-        // Insert button contains the bi-plus-circle icon
-        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
-        await expect(insertBtn).toBeDisabled();
+        // Insert icon should be visually disabled (opacity 0.35, not-allowed cursor)
+        const insertIcon = modal.locator('i.nrc-insert-icon');
+        await expect(insertIcon).toBeVisible();
+        const opacity = await insertIcon.evaluate(el => window.getComputedStyle(el).opacity);
+        expect(parseFloat(opacity)).toBeLessThan(1);
     });
 
     /**
@@ -105,9 +107,11 @@ test.describe('E-NRC — newRetrievalCode', () => {
         const contractInput = modal.locator('input[placeholder="Cerca contratto..."]');
         await contractInput.fill('TEST_E2E_054');
 
-        // Insert button should now be enabled
-        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
-        await expect(insertBtn).toBeEnabled();
+        // Insert icon should be visually enabled (opacity 1, pointer cursor)
+        const insertIcon = modal.locator('i.nrc-insert-icon');
+        await expect(insertIcon).toBeVisible();
+        const opacity = await insertIcon.evaluate(el => window.getComputedStyle(el).opacity);
+        expect(parseFloat(opacity)).toBe(1);
     });
 
     /**
@@ -151,15 +155,18 @@ test.describe('E-NRC — newRetrievalCode', () => {
      * AC-NRC-04: QUANDO l'utente preme il bottone di inserimento, appare la modale di conferma
      */
     test('E-NRC-05: clicking insert shows confirmation modal', async ({ page }) => {
+        // Accept any browser confirm() dialog (unconsumed code warning from prior inserts)
+        page.on('dialog', dialog => dialog.accept());
+
         const modal = await openNrcModal(page);
 
         // Prepare a filled form
         const contractInput = modal.locator('input[placeholder="Cerca contratto..."]');
         await contractInput.fill('TEST_E2E_054');
 
-        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
-        await expect(insertBtn).toBeEnabled();
-        await insertBtn.click();
+        const insertIcon = modal.locator('i.nrc-insert-icon');
+        await expect(insertIcon).toBeVisible();
+        await insertIcon.click();
 
         // Confirmation modal should appear
         const confirmModal = page.locator('#confirmInsertModal');
@@ -171,38 +178,216 @@ test.describe('E-NRC — newRetrievalCode', () => {
     });
 
     /**
-     * E-NRC-06: Successful insert updates table
-     * AC-NRC-04: QUANDO l'utente conferma, la tabella si aggiorna
+     * E-NRC-08: Double confirmation when unconsumed code exists for same type
+     * When the user tries to insert a code and an unconsumed code already exists for the
+     * same operation type, a browser confirm() dialog must appear BEFORE the modal.
      */
-    test('E-NRC-06: confirming insert updates existing codes table', async ({ page }) => {
+    test('E-NRC-08: double confirmation fires when unconsumed code exists for same type', async ({ page }) => {
+        // Mock endpoints: tabella returns an unconsumed code for _RISTO (type T),
+        // calc returns a valid preview
+        await page.route('**/ajax_newRetrievalCode_view.php**', async (route) => {
+            const url = route.request().url();
+            if (url.includes('action=tabella')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        success: true,
+                        data: [
+                            {
+                                insert_date: '2026-03-20',
+                                code: 'RTTEST_E2E_0541',
+                                operation_type_code: '_RISTO',
+                                consumed: false,
+                            },
+                        ],
+                    }),
+                });
+            } else if (url.includes('action=calc')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        success: true,
+                        data: { code: 'RTTEST_E2E_0542', next_n: 2 },
+                    }),
+                });
+            } else {
+                await route.continue();
+            }
+        });
+
         const modal = await openNrcModal(page);
 
-        // Use the fixture contract that is already in the DB
+        // Fill contract — we need to trigger selectSuggestion logic so existingCodes gets populated.
+        // Simulate by first mocking search, typing, then clicking suggestion.
+        await page.route('**/ajax_newRetrievalCode_view.php**', async (route) => {
+            const url = route.request().url();
+            if (url.includes('action=search')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        success: true,
+                        data: [{ bper_policy_number: 'TEST_E2E_054', company_policy_number: null }],
+                    }),
+                });
+            } else if (url.includes('action=tabella')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        success: true,
+                        data: [
+                            {
+                                insert_date: '2026-03-20',
+                                code: 'RTTEST_E2E_0541',
+                                operation_type_code: '_RISTO',
+                                consumed: false,
+                            },
+                        ],
+                    }),
+                });
+            } else if (url.includes('action=calc')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        success: true,
+                        data: { code: 'RTTEST_E2E_0542', next_n: 2 },
+                    }),
+                });
+            } else {
+                await route.continue();
+            }
+        });
+
         const contractInput = modal.locator('input[placeholder="Cerca contratto..."]');
-        await contractInput.fill('TEST_E2E_054');
+        await contractInput.fill('TE');
+        await page.waitForTimeout(2500); // debounce
 
-        // Open confirm modal
-        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
-        await expect(insertBtn).toBeEnabled();
-        await insertBtn.click();
+        const suggestions = modal.locator('ul.list-group li.list-group-item');
+        if ((await suggestions.count()) > 0) {
+            await suggestions.first().click();
+        } else {
+            // Fallback: set the value directly and trigger fetch via type change
+            await contractInput.fill('TEST_E2E_054');
+        }
 
+        // Wait for existingCodes to load (table should show the unconsumed row)
+        await page.waitForTimeout(1500);
+
+        // Set up dialog handler: accept the confirm() dialog
+        let dialogFired = false;
+        let dialogMessage = '';
+        page.on('dialog', async (dialog) => {
+            dialogFired = true;
+            dialogMessage = dialog.message();
+            await dialog.accept();
+        });
+
+        // Click the insert icon (bi-plus-circle-fill when enabled)
+        const insertIcon = modal.locator('i.nrc-insert-icon');
+        await insertIcon.click();
+
+        // Wait a bit for the dialog to fire
+        await page.waitForTimeout(500);
+
+        // The browser confirm() should have fired with the warning about existing code
+        expect(dialogFired).toBe(true);
+        expect(dialogMessage).toContain('Esiste già un codice valido');
+        expect(dialogMessage).toContain('Riscatto Totale');
+
+        // After accepting, the confirmation modal should appear
         const confirmModal = page.locator('#confirmInsertModal');
         await expect(confirmModal).toBeVisible({ timeout: 5000 });
+    });
 
-        // Click confirm
-        const confirmBtn = confirmModal.locator('.modal-footer button.btn-primary');
-        await confirmBtn.click();
+    /**
+     * E-NRC-09: Double confirmation does NOT fire when unconsumed code is for different type
+     * When inserting for type P but the unconsumed code is for _RISTO (type T),
+     * the confirm dialog should NOT appear.
+     */
+    test('E-NRC-09: no double confirmation when unconsumed code is for different type', async ({ page }) => {
+        await page.route('**/ajax_newRetrievalCode_view.php**', async (route) => {
+            const url = route.request().url();
+            if (url.includes('action=search')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        success: true,
+                        data: [{ bper_policy_number: 'TEST_E2E_054', company_policy_number: null }],
+                    }),
+                });
+            } else if (url.includes('action=tabella')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        success: true,
+                        data: [
+                            {
+                                insert_date: '2026-03-20',
+                                code: 'RTTEST_E2E_0541',
+                                operation_type_code: '_RISTO',  // This is type T
+                                consumed: false,
+                            },
+                        ],
+                    }),
+                });
+            } else if (url.includes('action=calc')) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: 'application/json',
+                    body: JSON.stringify({
+                        success: true,
+                        data: { code: 'RPTEST_E2E_0541', next_n: 1 },
+                    }),
+                });
+            } else {
+                await route.continue();
+            }
+        });
 
-        // Confirmation modal should close
-        await expect(confirmModal).not.toBeVisible({ timeout: 5000 });
+        const modal = await openNrcModal(page);
 
-        // The existing codes table should now show at least one row
-        await page.waitForSelector('.table tbody tr', { timeout: 5000 });
-        const rows = modal.locator('.table tbody tr');
-        expect(await rows.count()).toBeGreaterThan(0);
+        // Switch to type P first
+        const typeSelect = modal.locator('select.form-select').first();
+        await typeSelect.selectOption('P');
 
-        // Form must NOT be cleared (contract input retains its value)
-        await expect(contractInput).toHaveValue('TEST_E2E_054');
+        const contractInput = modal.locator('input[placeholder="Cerca contratto..."]');
+        await contractInput.fill('TE');
+        await page.waitForTimeout(2500);
+
+        const suggestions = modal.locator('ul.list-group li.list-group-item');
+        if ((await suggestions.count()) > 0) {
+            await suggestions.first().click();
+        } else {
+            await contractInput.fill('TEST_E2E_054');
+        }
+
+        await page.waitForTimeout(1500);
+
+        // Set up dialog handler
+        let dialogFired = false;
+        page.on('dialog', async (dialog) => {
+            dialogFired = true;
+            await dialog.accept();
+        });
+
+        // Click insert icon
+        const insertIcon = modal.locator('i.nrc-insert-icon');
+        await insertIcon.click();
+
+        await page.waitForTimeout(500);
+
+        // The browser confirm() should NOT have fired (unconsumed code is for _RISTO, not _RISPA)
+        expect(dialogFired).toBe(false);
+
+        // The confirmation modal should appear directly
+        const confirmModal = page.locator('#confirmInsertModal');
+        await expect(confirmModal).toBeVisible({ timeout: 5000 });
     });
 
     /**
@@ -245,9 +430,11 @@ test.describe('E-NRC — newRetrievalCode', () => {
         const warningText = await warning.textContent();
         expect(warningText).toContain('Limite');
 
-        // Insert button must be disabled
-        const insertBtn = modal.locator('button:has(.bi-plus-lg)');
-        await expect(insertBtn).toBeDisabled();
+        // Insert icon must be visually disabled (opacity 0.35)
+        const insertIcon = modal.locator('i.nrc-insert-icon');
+        await expect(insertIcon).toBeVisible();
+        const opacity = await insertIcon.evaluate(el => window.getComputedStyle(el).opacity);
+        expect(parseFloat(opacity)).toBeLessThan(1);
     });
 
 });

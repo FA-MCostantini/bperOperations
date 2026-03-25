@@ -17,9 +17,4 @@ abstract class AbstractOperation implements OperationInterface
     {
         return true;
     }
-
-    public function getCurrentUserId(): int
-    {
-        return 0;
-    }
 }

@@ -204,7 +204,7 @@ class NewRetrievalCodeIntegrationTest extends BperTestCase
 
         // Manually log as AjaxResponseHelper::success() would in a real request
         $logger = new OperationAuditLogger();
-        $logger->log($operation->getName(), $request->params, $operation->getCurrentUserId());
+        $logger->log($operation->getName(), $request->params);
 
         $pdo  = $this->getConnection();
         $stmt = $pdo->prepare(

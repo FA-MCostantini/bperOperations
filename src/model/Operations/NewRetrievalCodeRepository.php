@@ -38,7 +38,10 @@ class NewRetrievalCodeRepository {
     public function getExistingCodes(string $bperContractNumber): array {
         // Q-NRC-02
         $stmt = $this->tryQuery(
-            "SELECT insert_date, code, operation_type_code FROM ntt_bper.t_ath_policy_auth_code WHERE bper_contract_number = :bper_contract_number ORDER BY insert_date DESC, operation_type_code",
+            "SELECT insert_date, code, operation_type_code, consumed
+                    FROM ntt_bper.t_ath_policy_auth_code
+                   WHERE bper_contract_number = :bper_contract_number
+                   ORDER BY insert_date DESC, operation_type_code",
             [':bper_contract_number' => $bperContractNumber]
         );
         if ($stmt === null) {

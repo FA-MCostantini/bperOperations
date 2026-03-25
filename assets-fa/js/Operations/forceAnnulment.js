@@ -15,7 +15,7 @@ window.ForceAnnulment = {
                 </div>
                 <div class="col-md-3 ms-auto">
                     <select class="form-select" v-model="pageSize" @change="currentPage = 1">
-                        <option :value="20">20 per pagina</option>
+                        <option :value="15">15 per pagina</option>
                         <option :value="50">50 per pagina</option>
                         <option :value="100">100 per pagina</option>
                     </select>
@@ -110,7 +110,7 @@ window.ForceAnnulment = {
             filterText: '',
             sortColumn: '',
             sortAsc: true,
-            pageSize: 20,
+            pageSize: 15,
             currentPage: 1,
             deleteTargetId: null,
             showDeleteConfirm: false
