@@ -17,6 +17,7 @@ if (!defined('AUTOLOADER_LOADED')) {
     // Livello 0: infrastruttura DB
     require_once __DIR__ . '/Database.php';
     require_once __DIR__ . '/TraitTryQuery.php';
+    require_once __DIR__ . '/cls_Auth.php';
     require_once __DIR__ . '/env_settings.php';
 
     // Livello 1: DTO e interfacce
